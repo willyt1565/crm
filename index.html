@@ -14,7 +14,7 @@
 :root{
   --bg:#060d1f;--surface:#0a1428;--surface2:#0f1729;--border:#1a2640;--border2:#1e2d4a;
   --text:#e2e8f0;--muted:#94a3b8;--dim:#64748b;--faint:#334155;
-  --blue:#1a56db;--blue-light:#4a9eff;
+  --blue:#1a56db;--blue-l:#4a9eff;--gold:#C8A84B;
   --safe-top:env(safe-area-inset-top,0px);--safe-bot:env(safe-area-inset-bottom,0px);
 }
 html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM Sans','Segoe UI',sans-serif;font-size:15px;overscroll-behavior:none;}
@@ -24,125 +24,145 @@ button{cursor:pointer;}
 /* ── Screens ── */
 .screen{display:none;position:fixed;inset:0;overflow-y:auto;-webkit-overflow-scrolling:touch;background:var(--bg);z-index:10;}
 .screen.active{display:block;}
+#login-screen.active{display:flex;align-items:center;justify-content:center;min-height:100%;padding:20px;padding-top:calc(20px + var(--safe-top));padding-bottom:calc(20px + var(--safe-bot));}
+#setup-screen{padding:28px 20px;padding-top:calc(32px + var(--safe-top));padding-bottom:calc(32px + var(--safe-bot));}
 
-/* ── App ── */
+/* ── App shell ── */
 #app{display:none;flex-direction:column;height:100%;height:100dvh;}
 #header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 16px;padding-top:var(--safe-top);flex-shrink:0;}
-#header-inner{display:flex;align-items:center;justify-content:space-between;height:56px;}
+#header-inner{display:flex;align-items:center;justify-content:space-between;height:54px;}
 #logo{display:flex;align-items:center;gap:10px;}
-#logo-icon{width:32px;height:32px;background:linear-gradient(135deg,#1a56db,#4a9eff);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;}
-#logo-text .title{font-family:'Playfair Display',serif;font-size:14px;font-weight:700;line-height:1.2;}
-#logo-text .sub{font-size:9px;color:var(--blue-light);font-weight:700;letter-spacing:.12em;text-transform:uppercase;}
+#logo-icon{width:30px;height:30px;background:linear-gradient(135deg,#142878,#1a56db);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;}
+#logo-text .title{font-family:'Playfair Display',serif;font-size:13px;font-weight:700;line-height:1.2;}
+#logo-text .sub{font-size:9px;color:var(--blue-l);font-weight:700;letter-spacing:.1em;text-transform:uppercase;}
 #header-right{display:flex;align-items:center;gap:8px;}
-#sync-dot{width:8px;height:8px;border-radius:50%;background:#34d399;flex-shrink:0;}
+#user-pill{display:flex;align-items:center;gap:7px;background:var(--surface2);border:1px solid var(--border2);border-radius:20px;padding:4px 10px 4px 4px;}
+#user-avatar{width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,var(--blue),var(--blue-l));display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:#fff;flex-shrink:0;}
+#user-name{font-size:12px;font-weight:600;color:var(--muted);}
+#sync-dot{width:7px;height:7px;border-radius:50%;background:#34d399;flex-shrink:0;}
 #sync-dot.syncing{background:#fbbf24;animation:pulse 1s infinite;}
 #sync-dot.error{background:#f87171;}
 @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.3;}}
-#tabs{display:flex;gap:2px;padding:6px 0;}
-.tab{padding:8px 16px;border:none;border-radius:6px;font-size:12px;font-weight:700;background:transparent;color:var(--dim);transition:all .15s;}
+#tabs{display:flex;gap:2px;padding:5px 0;}
+.tab{padding:7px 14px;border:none;border-radius:6px;font-size:12px;font-weight:700;background:transparent;color:var(--dim);transition:all .15s;}
 .tab.active{background:var(--blue);color:#fff;}
-.tab-badge{margin-left:5px;padding:1px 6px;border-radius:10px;font-size:10px;}
-#content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px;padding-bottom:calc(16px + var(--safe-bot));}
+.tab-badge{margin-left:4px;padding:1px 6px;border-radius:10px;font-size:10px;}
+#content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;padding-bottom:calc(14px + var(--safe-bot));}
 
-/* ── Setup screen ── */
-#setup-screen{padding:24px 20px;padding-top:calc(32px + var(--safe-top));padding-bottom:calc(32px + var(--safe-bot));}
-.setup-inner{max-width:520px;margin:0 auto;}
-.setup-logo{display:flex;align-items:center;gap:12px;margin-bottom:28px;}
-.setup-logo-icon{width:40px;height:40px;background:linear-gradient(135deg,#1a56db,#4a9eff);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;}
-.setup-step{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:10px;}
-.step-num{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:var(--blue);color:#fff;font-size:11px;font-weight:800;margin-bottom:8px;}
-.step-title{font-size:14px;font-weight:700;margin-bottom:6px;}
-.step-body{font-size:13px;color:var(--muted);line-height:1.6;}
-.step-body a{color:var(--blue-light);}
-.step-body strong{color:var(--text);}
-.sql-block{background:var(--bg);border:1px solid var(--border2);border-radius:8px;padding:12px;margin-top:10px;font-family:monospace;font-size:11px;color:#34d399;line-height:1.8;white-space:pre-wrap;word-break:break-all;position:relative;}
-.copy-btn{position:absolute;top:8px;right:8px;background:var(--border);color:var(--muted);border:none;border-radius:5px;padding:3px 8px;font-size:10px;font-weight:700;cursor:pointer;}
-.setup-inputs{display:flex;flex-direction:column;gap:10px;margin-top:12px;}
+/* ── Shared form ── */
 .field-label{font-size:10px;font-weight:700;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;display:block;margin-bottom:4px;}
 .field-input{width:100%;background:var(--bg);border:1px solid var(--border2);border-radius:7px;padding:10px 12px;color:var(--text);outline:none;-webkit-appearance:none;}
-textarea.field-input{resize:vertical;min-height:72px;}
-.big-btn{width:100%;padding:14px;background:linear-gradient(135deg,#1a56db,#2563eb);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;margin-top:14px;letter-spacing:.02em;}
+.field-input:focus{border-color:var(--blue);}
+textarea.field-input{resize:vertical;min-height:70px;}
+.big-btn{width:100%;padding:13px;background:linear-gradient(135deg,#142878,#1a56db);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;letter-spacing:.02em;transition:opacity .15s;}
 .big-btn:disabled{opacity:.5;cursor:not-allowed;}
-.msg-error{color:#f87171;font-size:12px;margin-top:8px;display:none;}
-.msg-status{color:#fbbf24;font-size:12px;margin-top:8px;display:none;}
+.msg-error{font-size:12px;margin-top:8px;display:none;line-height:1.5;padding:8px 12px;border-radius:7px;background:rgba(248,113,113,.1);border:1px solid #f8717144;color:#f87171;}
+.msg-ok{font-size:12px;margin-top:8px;display:none;line-height:1.5;padding:8px 12px;border-radius:7px;background:rgba(52,211,153,.1);border:1px solid #34d39944;color:#34d399;}
 
-/* ── Login screen ── */
-#login-screen{display:flex;align-items:center;justify-content:center;min-height:100%;padding:24px 20px;padding-top:calc(24px + var(--safe-top));padding-bottom:calc(24px + var(--safe-bot));}
-.login-box{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:28px 24px;width:100%;max-width:380px;box-shadow:0 24px 60px rgba(0,0,0,.5);}
-.login-logo{display:flex;align-items:center;gap:12px;margin-bottom:24px;}
-.login-logo-icon{width:38px;height:38px;background:linear-gradient(135deg,#1a56db,#4a9eff);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:18px;}
-.login-title{font-family:'Playfair Display',serif;font-size:20px;font-weight:700;margin-bottom:4px;}
-.login-sub{font-size:11px;color:var(--blue-light);font-weight:700;letter-spacing:.1em;text-transform:uppercase;}
-.login-fields{display:flex;flex-direction:column;gap:12px;margin-bottom:16px;}
-.login-tabs{display:flex;gap:4px;margin-bottom:20px;}
-.login-tab{flex:1;padding:8px;border:1px solid var(--border);border-radius:7px;background:transparent;color:var(--dim);font-size:13px;font-weight:700;}
-.login-tab.active{background:var(--blue);color:#fff;border-color:var(--blue);}
-#login-error{color:#f87171;font-size:12px;margin-top:8px;display:none;}
-.forgot-link{color:var(--blue-light);font-size:12px;background:none;border:none;cursor:pointer;display:block;text-align:center;margin-top:12px;}
+/* ── Setup screen ── */
+.setup-inner{max-width:540px;margin:0 auto;}
+.setup-logo{display:flex;align-items:center;gap:12px;margin-bottom:22px;}
+.setup-logo-icon{width:40px;height:40px;background:linear-gradient(135deg,#142878,#1a56db);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;}
+.step-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:10px;}
+.step-num{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:var(--blue);color:#fff;font-size:11px;font-weight:800;margin-bottom:8px;}
+.step-title{font-size:14px;font-weight:700;margin-bottom:5px;}
+.step-body{font-size:13px;color:var(--muted);line-height:1.65;}
+.step-body a{color:var(--blue-l);}
+.step-body strong{color:var(--text);}
+.sql-block{background:var(--bg);border:1px solid var(--border2);border-radius:8px;padding:12px;margin-top:10px;font-family:monospace;font-size:11px;color:#34d399;line-height:1.9;white-space:pre-wrap;word-break:break-all;position:relative;}
+.copy-btn{position:absolute;top:8px;right:8px;background:var(--border2);color:var(--muted);border:none;border-radius:5px;padding:3px 9px;font-size:10px;font-weight:700;cursor:pointer;}
+.field-group{display:flex;flex-direction:column;gap:10px;margin-top:12px;}
 
-/* ── Shared form/card styles ── */
-.pipeline{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:16px;}
-.pipeline-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 6px;text-align:center;cursor:pointer;transition:all .15s;}
-.pipeline-card.active{border-color:var(--card-color)!important;background:var(--card-bg)!important;}
-.pipeline-num{font-size:20px;font-weight:800;line-height:1;}
-.pipeline-label{font-size:8px;color:var(--dim);font-weight:700;margin-top:4px;letter-spacing:.05em;text-transform:uppercase;line-height:1.3;}
-.toolbar{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center;}
-.search-box{flex:1;min-width:140px;background:var(--surface);border:1px solid var(--border2);border-radius:8px;padding:9px 12px;color:var(--text);outline:none;}
+/* ── Login box ── */
+.login-box{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:26px 22px;width:100%;max-width:380px;box-shadow:0 24px 60px rgba(0,0,0,.5);}
+.login-logo{display:flex;align-items:center;gap:10px;margin-bottom:20px;}
+.login-logo-icon{width:36px;height:36px;background:linear-gradient(135deg,#142878,#1a56db);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;}
+.login-app-name{font-family:'Playfair Display',serif;font-size:19px;font-weight:700;}
+.login-app-sub{font-size:9px;color:var(--blue-l);font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-top:1px;}
+.auth-tabs{display:flex;gap:4px;margin-bottom:18px;}
+.auth-tab{flex:1;padding:8px;border:1px solid var(--border);border-radius:7px;background:transparent;color:var(--dim);font-size:13px;font-weight:700;transition:all .15s;}
+.auth-tab.active{background:var(--blue);color:#fff;border-color:var(--blue);}
+.login-fields{display:flex;flex-direction:column;gap:11px;margin-bottom:14px;}
+.link-btn{color:var(--blue-l);font-size:12px;background:none;border:none;cursor:pointer;display:block;text-align:center;margin-top:8px;padding:4px;}
+
+/* ── Pipeline ── */
+.pipeline{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:14px;}
+.p-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 4px;text-align:center;cursor:pointer;transition:all .15s;}
+.p-card.active{border-color:var(--cc)!important;background:var(--cb)!important;}
+.p-num{font-size:19px;font-weight:800;line-height:1;}
+.p-lbl{font-size:8px;color:var(--dim);font-weight:700;margin-top:4px;letter-spacing:.04em;text-transform:uppercase;line-height:1.3;}
+
+/* ── Toolbar ── */
+.toolbar{display:flex;gap:6px;margin-bottom:11px;flex-wrap:wrap;align-items:center;}
+.search-box{flex:1;min-width:120px;background:var(--surface);border:1px solid var(--border2);border-radius:8px;padding:8px 11px;color:var(--text);outline:none;}
 .search-box::placeholder{color:var(--faint);}
-select.sort-sel{background:var(--surface);border:1px solid var(--border2);border-radius:8px;padding:9px 10px;color:var(--text);outline:none;-webkit-appearance:none;}
-.lead-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:8px;}
+.sort-sel{background:var(--surface);border:1px solid var(--border2);border-radius:8px;padding:8px 10px;color:var(--text);outline:none;-webkit-appearance:none;}
+.filter-pills{display:flex;gap:4px;flex-wrap:wrap;}
+.pill{padding:6px 12px;border-radius:7px;font-size:11px;font-weight:700;border:1px solid var(--border);background:var(--surface);color:var(--dim);white-space:nowrap;}
+.pill.active{background:var(--blue);color:#fff;border-color:var(--blue);}
+.count{font-size:11px;color:var(--dim);margin-left:auto;white-space:nowrap;}
+
+/* ── Lead cards ── */
+.lead-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:13px;margin-bottom:8px;transition:border-color .15s;}
 .lead-name{font-weight:700;font-size:15px;margin-bottom:2px;}
-.lead-contact{font-size:12px;color:var(--blue-light);margin-bottom:6px;}
-.lead-address{font-size:12px;color:var(--muted);margin-bottom:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.lead-meta{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:8px;}
-.chip{font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;letter-spacing:.06em;text-transform:uppercase;white-space:nowrap;}
+.lead-contact{font-size:12px;color:var(--blue-l);margin-bottom:5px;}
+.lead-address{font-size:12px;color:var(--muted);margin-bottom:7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.chip{font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;letter-spacing:.05em;text-transform:uppercase;white-space:nowrap;}
+.lead-meta{display:flex;gap:5px;flex-wrap:wrap;align-items:center;margin-bottom:8px;}
+.assigned-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;padding:7px 10px;background:var(--surface2);border-radius:7px;border:1px solid var(--border2);}
+.avatar{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;color:#fff;flex-shrink:0;}
+.assigned-name{font-size:12px;font-weight:600;color:var(--muted);flex:1;}
+.claim-btn{font-size:11px;font-weight:700;color:var(--gold);background:rgba(200,168,75,.1);border:1px solid rgba(200,168,75,.3);border-radius:5px;padding:3px 8px;cursor:pointer;white-space:nowrap;}
+.claim-btn:hover{background:rgba(200,168,75,.2);}
 .lead-footer{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;}
-.status-sel{border-radius:4px;padding:4px 8px;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;border:1px solid transparent;outline:none;-webkit-appearance:none;cursor:pointer;}
-.lead-actions{display:flex;gap:6px;}
-.task-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:8px;display:flex;gap:12px;align-items:flex-start;}
-.task-card.done{opacity:.45;}
+.status-sel{border-radius:4px;padding:3px 8px;font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;border:1px solid transparent;outline:none;-webkit-appearance:none;cursor:pointer;}
+.lead-actions{display:flex;gap:5px;}
+
+/* ── Task cards ── */
+.task-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:13px;margin-bottom:8px;display:flex;gap:11px;align-items:flex-start;}
+.task-card.done{opacity:.4;}
 .task-card.overdue{border-color:#f8717133;}
 .task-card.today{border-color:#fbbf2433;}
-.checkbox{width:22px;height:22px;border-radius:6px;border:2px solid var(--border2);background:transparent;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;flex-shrink:0;margin-top:2px;transition:all .15s;cursor:pointer;}
+.checkbox{width:22px;height:22px;border-radius:6px;border:2px solid var(--border2);background:transparent;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;flex-shrink:0;margin-top:1px;transition:all .15s;cursor:pointer;}
 .checkbox.checked{background:#34d399;border-color:#34d399;color:#060d1f;}
 .task-body{flex:1;min-width:0;}
 .task-title{font-size:14px;font-weight:600;margin-bottom:4px;}
 .task-card.done .task-title{text-decoration:line-through;color:var(--dim);}
-.task-meta{display:flex;gap:8px;flex-wrap:wrap;align-items:center;font-size:11px;color:var(--dim);}
-.task-actions{display:flex;gap:6px;flex-shrink:0;}
-.summary-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-bottom:16px;}
+.task-meta{display:flex;gap:7px;flex-wrap:wrap;align-items:center;font-size:11px;color:var(--dim);}
+.task-actions{display:flex;gap:5px;flex-shrink:0;}
+
+/* ── Summary grid ── */
+.summary-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-bottom:14px;}
 .summary-card{border-radius:10px;padding:12px 8px;text-align:center;}
 .summary-num{font-size:22px;font-weight:800;line-height:1;}
 .summary-label{font-size:9px;font-weight:700;margin-top:4px;letter-spacing:.06em;text-transform:uppercase;color:var(--dim);}
-.btn{padding:8px 16px;border-radius:7px;border:none;font-size:13px;font-weight:600;}
-.btn-primary{background:linear-gradient(135deg,#1a56db,#2563eb);color:#fff;}
+
+/* ── Buttons ── */
+.btn{padding:8px 15px;border-radius:7px;border:none;font-size:13px;font-weight:600;}
+.btn-primary{background:linear-gradient(135deg,#142878,#1a56db);color:#fff;}
 .btn-ghost{background:transparent;border:1px solid var(--border2);color:var(--muted);}
-.btn-sm{padding:5px 12px;font-size:12px;border-radius:6px;border:none;}
+.btn-sm{padding:5px 11px;font-size:11px;border-radius:6px;border:none;}
 .btn-edit{background:var(--border);color:var(--muted);}
 .btn-del{background:transparent;color:#f87171;}
-.add-btn{background:linear-gradient(135deg,#1a56db,#2563eb);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:700;display:flex;align-items:center;gap:5px;white-space:nowrap;}
-.alert-bar{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;}
-.alert{font-size:11px;font-weight:700;padding:4px 10px;border-radius:6px;letter-spacing:.04em;}
+.add-btn{background:linear-gradient(135deg,#142878,#1a56db);color:#fff;border:none;border-radius:8px;padding:8px 13px;font-size:13px;font-weight:700;display:flex;align-items:center;gap:5px;white-space:nowrap;}
+.alert-bar{margin-bottom:10px;display:flex;gap:6px;flex-wrap:wrap;}
+.alert{font-size:11px;font-weight:700;padding:4px 10px;border-radius:6px;}
 .alert-red{background:rgba(248,113,113,.12);border:1px solid #f8717133;color:#f87171;}
 .alert-yellow{background:rgba(251,191,36,.12);border:1px solid #fbbf2433;color:#fbbf24;}
-.empty{text-align:center;padding:60px 20px;background:var(--surface);border-radius:12px;border:1px solid var(--border);}
-.empty-icon{font-size:36px;margin-bottom:10px;}
+.empty{text-align:center;padding:56px 20px;background:var(--surface);border-radius:12px;border:1px solid var(--border);}
+.empty-icon{font-size:34px;margin-bottom:10px;}
 .empty-text{color:var(--dim);font-size:14px;margin-bottom:14px;}
-.filter-pills{display:flex;gap:4px;}
-.pill{padding:7px 12px;border-radius:7px;font-size:12px;font-weight:700;border:1px solid var(--border);background:var(--surface);color:var(--dim);}
-.pill.active{background:var(--blue);color:#fff;border-color:var(--blue);}
-.count{font-size:11px;color:var(--dim);margin-left:auto;}
-.overdue-label{font-size:9px;display:block;font-weight:700;letter-spacing:.05em;color:#f87171;}
+.overdue-lbl{font-size:9px;display:block;font-weight:700;letter-spacing:.05em;color:#f87171;}
 
 /* ── Modal ── */
 .overlay{position:fixed;inset:0;background:rgba(5,10,24,.88);z-index:200;display:flex;align-items:flex-end;justify-content:center;padding-bottom:var(--safe-bot);}
 @media(min-width:600px){.overlay{align-items:center;}}
-.modal{background:var(--surface2);border:1px solid var(--border2);border-radius:16px 16px 0 0;width:100%;max-width:580px;max-height:92dvh;display:flex;flex-direction:column;box-shadow:0 -20px 60px rgba(0,0,0,.6);}
+.modal{background:var(--surface2);border:1px solid var(--border2);border-radius:16px 16px 0 0;width:100%;max-width:580px;max-height:92dvh;display:flex;flex-direction:column;box-shadow:0 -20px 60px rgba(0,0,0,.7);}
 @media(min-width:600px){.modal{border-radius:14px;max-height:88dvh;}}
-.modal-head{padding:16px 18px;border-bottom:1px solid var(--border2);display:flex;justify-content:space-between;align-items:center;flex-shrink:0;}
-.modal-title{font-family:'Playfair Display',serif;font-size:17px;font-weight:700;}
-.modal-sub{font-size:9px;color:var(--blue-light);font-weight:700;letter-spacing:.12em;text-transform:uppercase;margin-bottom:2px;}
-.modal-body{overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px 18px;flex:1;}
+.modal-head{padding:15px 18px;border-bottom:1px solid var(--border2);display:flex;justify-content:space-between;align-items:center;flex-shrink:0;}
+.modal-title{font-family:'Playfair Display',serif;font-size:16px;font-weight:700;}
+.modal-sub{font-size:9px;color:var(--blue-l);font-weight:700;letter-spacing:.12em;text-transform:uppercase;margin-bottom:2px;}
+.modal-body{overflow-y:auto;-webkit-overflow-scrolling:touch;padding:15px 18px;flex:1;}
 .modal-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
 .modal-grid .full{grid-column:1/-1;}
 .modal-foot{padding:12px 18px;border-top:1px solid var(--border2);display:flex;gap:8px;justify-content:flex-end;flex-shrink:0;padding-bottom:calc(12px + var(--safe-bot));}
@@ -150,100 +170,130 @@ select.sort-sel{background:var(--surface);border:1px solid var(--border2);border
 </head>
 <body>
 
-<!-- ══ SETUP SCREEN ══════════════════════════════════════════════════════ -->
+<!-- ══ SETUP SCREEN ════════════════════════════════════════════════════ -->
 <div id="setup-screen" class="screen">
   <div class="setup-inner">
     <div class="setup-logo">
       <div class="setup-logo-icon">🏠</div>
       <div>
-        <div style="font-family:'Playfair Display',serif;font-size:18px;font-weight:700">Newera Property Mgmt</div>
-        <div style="font-size:10px;color:var(--blue-light);font-weight:700;letter-spacing:.12em;text-transform:uppercase">Lead CRM · One-time Setup</div>
+        <div style="font-family:'Playfair Display',serif;font-size:17px;font-weight:700">Newera Property Mgmt</div>
+        <div style="font-size:10px;color:var(--blue-l);font-weight:700;letter-spacing:.1em;text-transform:uppercase">Team CRM · Supabase Setup</div>
       </div>
     </div>
-    <p style="font-size:13px;color:var(--muted);margin-bottom:18px;line-height:1.6">Connect a free <strong style="color:var(--text)">Supabase</strong> database. This takes about 5 minutes and only needs to be done once.</p>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:16px;line-height:1.65">One-time setup by an admin. Once connected, any team member can create their own account at this URL.</p>
 
-    <div class="setup-step">
+    <div class="step-card">
       <div class="step-num">1</div>
-      <div class="step-title">Create a free Supabase account</div>
-      <div class="step-body">Go to <a href="https://supabase.com" target="_blank">supabase.com</a> → <strong>Start your project</strong> → sign in with GitHub. Free, no credit card needed.</div>
+      <div class="step-title">Create a free Supabase project</div>
+      <div class="step-body">Go to <a href="https://supabase.com" target="_blank">supabase.com</a> → <strong>New Project</strong> → name it <strong>npm-crm</strong> → choose a region → <strong>Create new project</strong>. Wait ~60 seconds.</div>
     </div>
 
-    <div class="setup-step">
+    <div class="step-card">
       <div class="step-num">2</div>
-      <div class="step-title">Create a new project</div>
-      <div class="step-body">Click <strong>New Project</strong>, name it <strong>npm-crm</strong>, set any database password, pick the closest region, click <strong>Create new project</strong>. Wait ~60 seconds for it to start.</div>
+      <div class="step-title">Disable email confirmation <span style="color:var(--gold);font-size:11px;font-weight:700">(important)</span></div>
+      <div class="step-body">Go to <strong>Authentication → Settings</strong> → turn off <strong>Enable email confirmations</strong> → Save. This lets team members sign up instantly without clicking a confirmation link.</div>
     </div>
 
-    <div class="setup-step">
+    <div class="step-card">
       <div class="step-num">3</div>
-      <div class="step-title">Run this SQL to create your secure tables</div>
+      <div class="step-title">Run this SQL to create your tables</div>
       <div class="step-body">
-        In your project → <strong>SQL Editor</strong> → <strong>New query</strong> → paste and run:
-        <div class="sql-block" id="sql-block">-- Leads table
+        Go to <strong>SQL Editor → New query</strong>, paste and run:
+        <div class="sql-block" id="sql-block">-- Profiles (auto-created on signup)
+create table profiles (
+  id uuid references auth.users primary key,
+  full_name text,
+  email text,
+  created_at timestamptz default now()
+);
+alter table profiles enable row level security;
+create policy "team can view profiles"
+  on profiles for select using (auth.role() = 'authenticated');
+create policy "users update own profile"
+  on profiles for update using (auth.uid() = id);
+
+-- Auto-create profile on new user signup
+create or replace function handle_new_user()
+returns trigger as $$
+begin
+  insert into profiles (id, full_name, email)
+  values (
+    new.id,
+    new.raw_user_meta_data->>'full_name',
+    new.email
+  );
+  return new;
+end;
+$$ language plpgsql security definer;
+
+create trigger on_auth_user_created
+  after insert on auth.users
+  for each row execute procedure handle_new_user();
+
+-- Leads
 create table leads (
   id text primary key,
-  user_id uuid references auth.users not null default auth.uid(),
   data jsonb,
+  assigned_to uuid references profiles(id),
+  created_by uuid references profiles(id) default auth.uid(),
   updated_at bigint
 );
 alter table leads enable row level security;
-create policy "users own leads" on leads
-  for all using (auth.uid() = user_id)
-  with check (auth.uid() = user_id);
+create policy "team leads" on leads for all
+  using (auth.role() = 'authenticated')
+  with check (auth.role() = 'authenticated');
 
--- Tasks table
+-- Tasks
 create table tasks (
   id text primary key,
-  user_id uuid references auth.users not null default auth.uid(),
   data jsonb,
+  created_by uuid references profiles(id) default auth.uid(),
   updated_at bigint
 );
 alter table tasks enable row level security;
-create policy "users own tasks" on tasks
-  for all using (auth.uid() = user_id)
-  with check (auth.uid() = user_id);</div>
+create policy "team tasks" on tasks for all
+  using (auth.role() = 'authenticated')
+  with check (auth.role() = 'authenticated');</div>
         <button class="copy-btn" onclick="copySql()">Copy</button>
       </div>
     </div>
 
-    <div class="setup-step">
+    <div class="step-card">
       <div class="step-num">4</div>
-      <div class="step-title">Paste your project credentials</div>
-      <div class="step-body">Go to <strong>Project Settings → API</strong>. Copy your <strong>Project URL</strong> and <strong>anon public</strong> key.
-        <div class="setup-inputs">
-          <div>
-            <label class="field-label">Project URL</label>
-            <input id="sb-url" class="field-input" placeholder="https://xxxxxxxxxxxx.supabase.co" type="url" autocomplete="off" spellcheck="false"/>
-          </div>
-          <div>
-            <label class="field-label">Anon Public Key</label>
-            <input id="sb-key" class="field-input" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." autocomplete="off" spellcheck="false"/>
-          </div>
+      <div class="step-title">Enter your project credentials</div>
+      <div class="step-body">Go to <strong>Project Settings → API</strong> → copy your <strong>Project URL</strong> and <strong>anon public</strong> key.
+        <div class="field-group">
+          <div><label class="field-label">Project URL</label><input id="sb-url" class="field-input" placeholder="https://xxxxxxxxxxxx.supabase.co" type="url" autocomplete="off" spellcheck="false"/></div>
+          <div><label class="field-label">Anon Public Key</label><input id="sb-key" class="field-input" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." autocomplete="off" spellcheck="false"/></div>
         </div>
       </div>
     </div>
 
     <button class="big-btn" id="setup-btn" onclick="finishSetup()">Save & Continue →</button>
-    <div class="msg-error" id="setup-error">❌ <span id="setup-error-msg"></span></div>
-    <p style="font-size:11px;color:var(--faint);margin-top:14px;text-align:center;line-height:1.6">Credentials are stored only in your browser. You'll create your password on the next screen.</p>
+    <div class="msg-error" id="setup-error"></div>
+    <p style="font-size:11px;color:var(--faint);margin-top:14px;text-align:center;line-height:1.6">Share this URL with your team. Anyone who opens it can create their own account.</p>
   </div>
 </div>
 
-<!-- ══ LOGIN SCREEN ══════════════════════════════════════════════════════ -->
-<div id="login-screen" class="screen">
+<!-- ══ LOGIN SCREEN ════════════════════════════════════════════════════ -->
+<div id="login-screen" class="screen active">
   <div class="login-box">
     <div class="login-logo">
       <div class="login-logo-icon">🏠</div>
       <div>
-        <div class="login-title">NPM Lead CRM</div>
-        <div class="login-sub">Newera Property Management</div>
+        <div class="login-app-name">NPM Lead CRM</div>
+        <div class="login-app-sub">Newera Property Management</div>
       </div>
     </div>
-    <div class="login-tabs">
-      <button class="login-tab active" id="tab-signin" onclick="setAuthMode('signin')">Sign In</button>
-      <button class="login-tab" id="tab-signup" onclick="setAuthMode('signup')">Create Account</button>
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="tab-signin" onclick="setAuthMode('signin')">Sign In</button>
+      <button class="auth-tab" id="tab-signup" onclick="setAuthMode('signup')">Create Account</button>
     </div>
     <div class="login-fields">
+      <div id="name-field" style="display:none">
+        <label class="field-label">Full Name</label>
+        <input id="auth-name" class="field-input" type="text" placeholder="Your full name" autocomplete="name"/>
+      </div>
       <div>
         <label class="field-label">Email</label>
         <input id="auth-email" class="field-input" type="email" placeholder="you@example.com" autocomplete="email"/>
@@ -255,12 +305,13 @@ create policy "users own tasks" on tasks
     </div>
     <button class="big-btn" id="auth-btn" onclick="doAuth()">Sign In</button>
     <div class="msg-error" id="login-error"></div>
-    <button class="forgot-link" id="forgot-link" onclick="forgotPassword()">Forgot password?</button>
-    <button class="forgot-link" style="color:var(--dim);margin-top:16px;font-size:11px" onclick="showSetup()">⚙ Change database connection</button>
+    <div class="msg-ok" id="login-ok"></div>
+    <button class="link-btn" id="forgot-link" onclick="forgotPassword()">Forgot password?</button>
+    <button class="link-btn" style="color:var(--dim);font-size:11px;margin-top:12px" onclick="showSetup()">⚙ Admin setup</button>
   </div>
 </div>
 
-<!-- ══ APP ══════════════════════════════════════════════════════════════ -->
+<!-- ══ APP ════════════════════════════════════════════════════════════ -->
 <div id="app">
   <div id="header">
     <div id="header-inner">
@@ -268,28 +319,31 @@ create policy "users own tasks" on tasks
         <div id="logo-icon">🏠</div>
         <div id="logo-text">
           <div class="title">Newera Property Mgmt</div>
-          <div class="sub">Lead CRM</div>
+          <div class="sub">Team CRM</div>
         </div>
       </div>
       <div id="header-right">
-        <div id="sync-dot" title="Sync status"></div>
-        <button class="add-btn" onclick="openAddModal()"><span style="font-size:17px;line-height:1">+</span> <span id="add-label">New Lead</span></button>
+        <div id="sync-dot"></div>
+        <div id="user-pill">
+          <div id="user-avatar">?</div>
+          <div id="user-name">...</div>
+        </div>
       </div>
     </div>
     <div id="tabs">
       <button class="tab active" onclick="switchTab('leads')" id="tab-leads">Leads <span class="tab-badge" id="leads-badge" style="background:#1a2640;color:#64748b">0</span></button>
       <button class="tab" onclick="switchTab('tasks')" id="tab-tasks">Tasks <span class="tab-badge" id="tasks-badge" style="background:#1a2640;color:#64748b">0</span></button>
-      <button class="tab" onclick="signOut()" style="margin-left:auto;font-size:12px;padding:6px 10px;color:var(--dim)" title="Sign out">Sign Out</button>
+      <button class="tab" onclick="signOut()" style="margin-left:auto;font-size:12px;padding:6px 10px;color:var(--dim)">Sign Out</button>
     </div>
   </div>
   <div id="content"></div>
 </div>
 
-<!-- ══ RECORD MODAL ══════════════════════════════════════════════════════ -->
-<div class="overlay" id="modal" style="display:none" onclick="maybeCloseModal(event)">
+<!-- ══ RECORD MODAL ════════════════════════════════════════════════════ -->
+<div class="overlay" id="modal" style="display:none" onclick="maybeClose(event)">
   <div class="modal" onclick="event.stopPropagation()">
     <div class="modal-head">
-      <div><div class="modal-sub">NPM · Lead CRM</div><div class="modal-title" id="modal-title">Add Lead</div></div>
+      <div><div class="modal-sub">NPM · Team CRM</div><div class="modal-title" id="modal-title">Add Lead</div></div>
       <button class="btn btn-ghost" style="padding:5px 10px;font-size:16px" onclick="closeModal()">✕</button>
     </div>
     <div class="modal-body" id="modal-body"></div>
@@ -307,283 +361,356 @@ const SOURCES    = ["HHHB Referral","First Responder Network","Military Network"
 const PTYPES     = ["Single Family","Multi-Family","Duplex","Triplex","Quadplex","5+ Units","Commercial"];
 const TASK_TYPES = ["Call","Email","Text","Send Proposal","Follow-Up","Site Visit","Other"];
 const PRIORITIES = ["High","Medium","Low"];
+const AREAS      = ["San Antonio North","San Antonio South","San Antonio East","San Antonio West","Houston","Austin","Dallas","DFW","Other"];
 const SC = {
-  "New Lead":      {color:"#60a5fa",bg:"rgba(96,165,250,0.15)"},
-  "Contacted":     {color:"#a78bfa",bg:"rgba(167,139,250,0.15)"},
-  "Qualified":     {color:"#fbbf24",bg:"rgba(251,191,36,0.15)"},
-  "Proposal Sent": {color:"#f97316",bg:"rgba(249,115,22,0.15)"},
-  "Signed":        {color:"#34d399",bg:"rgba(52,211,153,0.15)"},
-  "Lost":          {color:"#f87171",bg:"rgba(248,113,113,0.15)"},
+  "New Lead":      {color:"#60a5fa",bg:"rgba(96,165,250,0.13)"},
+  "Contacted":     {color:"#a78bfa",bg:"rgba(167,139,250,0.13)"},
+  "Qualified":     {color:"#fbbf24",bg:"rgba(251,191,36,0.13)"},
+  "Proposal Sent": {color:"#f97316",bg:"rgba(249,115,22,0.13)"},
+  "Signed":        {color:"#34d399",bg:"rgba(52,211,153,0.13)"},
+  "Lost":          {color:"#f87171",bg:"rgba(248,113,113,0.13)"},
 };
 const PC = {High:"#f87171",Medium:"#fbbf24",Low:"#60a5fa"};
+const AVATAR_COLORS = ["#1a56db","#7c3aed","#059669","#d97706","#dc2626","#0891b2","#be185d"];
 
 // ── State ──────────────────────────────────────────────────────────────────
-let leads=[], tasks=[], tab="leads", lFilter="All", lSearch="", lSort="newest", tFilter="pending", tSearch="";
+let leads=[], tasks=[], profiles=[], tab="leads";
+let lFilter="All", lSearch="", lSort="newest", lAssign="all";
+let tFilter="pending", tSearch="";
 let modalMode=null, modalId=null;
-let SB_URL="", SB_KEY="", AUTH_TOKEN="", authMode="signin";
+let SB_URL="", SB_KEY="", AUTH_TOKEN="", REFRESH_TOKEN="", ME=null;
 
-// ── Local storage ──────────────────────────────────────────────────────────
-const lsGet = k => { try{return localStorage.getItem(k);}catch{return null;} };
-const lsSet = (k,v) => { try{localStorage.setItem(k,v);}catch{} };
-const lsDel = k => { try{localStorage.removeItem(k);}catch{} };
+// ── Storage ────────────────────────────────────────────────────────────────
+const ls = {
+  get:  k  => { try{ return localStorage.getItem(k); }catch{ return null; } },
+  set:  (k,v) => { try{ localStorage.setItem(k,v); }catch{} },
+  del:  k  => { try{ localStorage.removeItem(k); }catch{} }
+};
 
-// ── Screen routing ─────────────────────────────────────────────────────────
-function showScreen(id) {
-  document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
-  const s = document.getElementById(id);
-  if(s) s.classList.add("active");
-  document.getElementById("app").style.display = "none";
-  if(id === null) {
-    document.getElementById("app").style.display = "flex";
-  }
-}
-function showSetup() { showScreen("setup-screen"); document.getElementById("sb-url").value=lsGet("sb-url")||""; document.getElementById("sb-key").value=lsGet("sb-key")||""; }
-function showLogin() { showScreen("login-screen"); setTimeout(()=>document.getElementById("auth-email").focus(),200); }
-function showApp()   { showScreen(null); render(); setInterval(()=>pullAll().then(()=>render()),30000); }
-
-// ── Supabase REST helpers ──────────────────────────────────────────────────
+// ── Supabase REST ──────────────────────────────────────────────────────────
 async function sb(path, opts={}) {
-  const headers = {
-    "apikey": SB_KEY,
-    "Authorization": "Bearer " + (AUTH_TOKEN || SB_KEY),
-    "Content-Type": "application/json",
-    "Prefer": "return=minimal",
-    ...(opts.headers||{})
-  };
-  const res = await fetch(SB_URL + "/rest/v1/" + path, {...opts, headers});
-  if(!res.ok) { const t=await res.text(); throw new Error(t); }
+  const res = await fetch(SB_URL+"/rest/v1/"+path, {
+    ...opts,
+    headers: {
+      "apikey": SB_KEY,
+      "Authorization": "Bearer "+(AUTH_TOKEN||SB_KEY),
+      "Content-Type": "application/json",
+      "Prefer": "return=minimal",
+      ...(opts.headers||{})
+    }
+  });
+  if(!res.ok){ const e=await res.json().catch(()=>({message:"Error "+res.status})); throw new Error(e.message||e.hint||"Supabase error"); }
   return res.status===204 ? null : res.json();
 }
+
 async function sbAuth(endpoint, body) {
-  const res = await fetch(SB_URL + "/auth/v1/" + endpoint, {
-    method:"POST",
-    headers:{"apikey":SB_KEY,"Content-Type":"application/json"},
-    body: JSON.stringify(body)
-  });
-  const data = await res.json();
-  if(!res.ok) throw new Error(data.error_description || data.msg || "Auth error");
+  let res;
+  try {
+    res = await fetch(SB_URL+"/auth/v1/"+endpoint, {
+      method:"POST",
+      headers:{"apikey":SB_KEY,"Content-Type":"application/json"},
+      body: JSON.stringify(body)
+    });
+  } catch(e) { throw new Error("Cannot reach Supabase. Check your Project URL."); }
+  const text = await res.text();
+  let data;
+  try { data = JSON.parse(text); }
+  catch { throw new Error("Supabase returned an unexpected response. Check your project URL."); }
+  if(!res.ok) throw new Error(data.error_description||data.message||data.msg||"Auth error");
   return data;
 }
 
-// ── Sync status dot ────────────────────────────────────────────────────────
-function setSyncDot(state) {
-  const d = document.getElementById("sync-dot");
-  if(!d) return;
-  d.className = "";
-  if(state==="syncing") d.classList.add("syncing");
-  else if(state==="error") d.classList.add("error");
-}
+// ── Sync dot ───────────────────────────────────────────────────────────────
+function setSyncDot(state){ const d=document.getElementById("sync-dot"); if(!d)return; d.className=state==="syncing"?"syncing":state==="error"?"error":""; }
 
-// ── Pull all data ──────────────────────────────────────────────────────────
+// ── Pull ───────────────────────────────────────────────────────────────────
 async function pullAll() {
   setSyncDot("syncing");
   try {
-    const [ld,tk] = await Promise.all([
-      sb("leads?select=id,data,updated_at&order=updated_at.desc"),
-      sb("tasks?select=id,data,updated_at&order=updated_at.desc")
+    const [ld,tk,pr] = await Promise.all([
+      sb("leads?select=id,data,assigned_to,created_by,updated_at&order=updated_at.desc"),
+      sb("tasks?select=id,data,created_by,updated_at&order=updated_at.desc"),
+      sb("profiles?select=id,full_name,email")
     ]);
-    leads = ld.map(r=>({...r.data, id:r.id}));
-    tasks = tk.map(r=>({...r.data, id:r.id}));
-    lsSet("npm-leads", JSON.stringify(leads));
-    lsSet("npm-tasks", JSON.stringify(tasks));
+    leads    = ld.map(r=>({...r.data, id:r.id, assignedTo:r.assigned_to, createdBy:r.created_by}));
+    tasks    = tk.map(r=>({...r.data, id:r.id, createdBy:r.created_by}));
+    profiles = pr;
+    ls.set("npm-leads",    JSON.stringify(leads));
+    ls.set("npm-tasks",    JSON.stringify(tasks));
+    ls.set("npm-profiles", JSON.stringify(profiles));
     setSyncDot("ok");
-  } catch(e) { console.error(e); setSyncDot("error"); }
+  } catch(e){ console.error(e); setSyncDot("error"); }
 }
 
 async function upsertLead(lead) {
   setSyncDot("syncing");
-  try { await sb("leads", {method:"POST", headers:{"Prefer":"resolution=merge-duplicates"}, body:JSON.stringify({id:lead.id, data:lead, updated_at:lead.updatedAt})}); setSyncDot("ok"); }
-  catch(e) { console.error(e); setSyncDot("error"); }
+  try {
+    await sb("leads", {
+      method:"POST",
+      headers:{"Prefer":"resolution=merge-duplicates"},
+      body: JSON.stringify({id:lead.id, data:lead, assigned_to:lead.assignedTo||null, created_by:lead.createdBy||ME?.id, updated_at:lead.updatedAt})
+    });
+    setSyncDot("ok");
+  } catch(e){ console.error(e); setSyncDot("error"); }
 }
-async function deleteSbLead(id) {
-  try { await sb("leads?id=eq."+id, {method:"DELETE"}); } catch(e) { console.error(e); }
-}
+async function deleteSbLead(id){ try{ await sb("leads?id=eq."+id,{method:"DELETE"}); }catch(e){console.error(e);} }
 async function upsertTask(task) {
   setSyncDot("syncing");
-  try { await sb("tasks", {method:"POST", headers:{"Prefer":"resolution=merge-duplicates"}, body:JSON.stringify({id:task.id, data:task, updated_at:task.updatedAt})}); setSyncDot("ok"); }
-  catch(e) { console.error(e); setSyncDot("error"); }
+  try {
+    await sb("tasks", {
+      method:"POST",
+      headers:{"Prefer":"resolution=merge-duplicates"},
+      body: JSON.stringify({id:task.id, data:task, created_by:task.createdBy||ME?.id, updated_at:task.updatedAt})
+    });
+    setSyncDot("ok");
+  } catch(e){ console.error(e); setSyncDot("error"); }
 }
-async function deleteSbTask(id) {
-  try { await sb("tasks?id=eq."+id, {method:"DELETE"}); } catch(e) { console.error(e); }
+async function deleteSbTask(id){ try{ await sb("tasks?id=eq."+id,{method:"DELETE"}); }catch(e){console.error(e);} }
+
+// ── Screens ────────────────────────────────────────────────────────────────
+function showScreen(id) {
+  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
+  document.getElementById("app").style.display="none";
+  if(id) document.getElementById(id).classList.add("active");
+  else   document.getElementById("app").style.display="flex";
+}
+function showSetup(){ document.getElementById("sb-url").value=ls.get("sb-url")||""; document.getElementById("sb-key").value=ls.get("sb-key")||""; showScreen("setup-screen"); }
+function showLogin(){ showScreen("login-screen"); setTimeout(()=>document.getElementById("auth-email").focus(),200); }
+function showApp(){
+  showScreen(null);
+  if(ME){
+    const initials = (ME.full_name||ME.email||"?").split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase();
+    const ci = Math.abs((ME.id||"").charCodeAt(0)%AVATAR_COLORS.length);
+    document.getElementById("user-avatar").textContent=initials;
+    document.getElementById("user-avatar").style.background=AVATAR_COLORS[ci];
+    document.getElementById("user-name").textContent=ME.full_name||ME.email?.split("@")[0]||"You";
+  }
+  render();
 }
 
 // ── Setup ──────────────────────────────────────────────────────────────────
-function copySql() {
-  const text = document.getElementById("sql-block").innerText.replace("Copy","").trim();
-  navigator.clipboard.writeText(text).then(()=>{
-    const btn = document.querySelector(".copy-btn");
-    btn.textContent="Copied!"; setTimeout(()=>btn.textContent="Copy",2000);
-  });
+function copySql(){
+  const t=document.getElementById("sql-block").innerText.replace(/Copy$/,"").trim();
+  navigator.clipboard.writeText(t).then(()=>{const b=document.querySelector(".copy-btn");b.textContent="Copied!";setTimeout(()=>b.textContent="Copy",2000);});
 }
-
-async function finishSetup() {
-  const url = (document.getElementById("sb-url").value||"").trim().replace(/\/$/,"");
-  const key = (document.getElementById("sb-key").value||"").trim();
-  const errEl = document.getElementById("setup-error");
-  const errMsg = document.getElementById("setup-error-msg");
-  errEl.style.display = "none";
-  if(!url||!key) { errMsg.textContent="Please fill in both fields."; errEl.style.display="block"; return; }
-  if(!url.startsWith("https://")) { errMsg.textContent="URL must start with https://"; errEl.style.display="block"; return; }
-  document.getElementById("setup-btn").disabled = true;
+async function finishSetup(){
+  const url=(document.getElementById("sb-url").value||"").trim().replace(/\/$/,"");
+  const key=(document.getElementById("sb-key").value||"").trim();
+  const errEl=document.getElementById("setup-error");
+  errEl.style.display="none";
+  if(!url||!key){errEl.textContent="Please fill in both fields.";errEl.style.display="block";return;}
+  if(!url.startsWith("https://")){errEl.textContent="URL must start with https://";errEl.style.display="block";return;}
+  if(!url.includes("supabase.co")){errEl.textContent="That doesn\'t look like a Supabase URL. Copy it from Project Settings → API.";errEl.style.display="block";return;}
+  document.getElementById("setup-btn").disabled=true;
+  document.getElementById("setup-btn").textContent="Connecting…";
   SB_URL=url; SB_KEY=key;
   try {
-    await fetch(SB_URL+"/auth/v1/health", {headers:{"apikey":SB_KEY}});
-    lsSet("sb-url", url); lsSet("sb-key", key);
-    document.getElementById("setup-btn").disabled = false;
+    // Any HTTP response (even 401) means Supabase is reachable
+    await fetch(SB_URL+"/rest/v1/profiles?limit=1", {
+      headers:{"apikey":SB_KEY,"Authorization":"Bearer "+SB_KEY}
+    });
+    ls.set("sb-url",url); ls.set("sb-key",key);
+    document.getElementById("setup-btn").disabled=false;
+    document.getElementById("setup-btn").textContent="Save & Continue →";
     showLogin();
-  } catch(e) {
-    document.getElementById("setup-btn").disabled = false;
-    errMsg.textContent = "Could not reach Supabase. Check your URL and key.";
-    errEl.style.display = "block";
+  } catch(e){
+    document.getElementById("setup-btn").disabled=false;
+    document.getElementById("setup-btn").textContent="Save & Continue →";
+    errEl.textContent="❌ Could not reach Supabase. Double-check your Project URL — it should look like https://abcdefgh.supabase.co";
+    errEl.style.display="block";
   }
 }
 
 // ── Auth ───────────────────────────────────────────────────────────────────
-function setAuthMode(mode) {
-  authMode = mode;
-  document.getElementById("tab-signin").classList.toggle("active", mode==="signin");
-  document.getElementById("tab-signup").classList.toggle("active", mode==="signup");
-  document.getElementById("auth-btn").textContent = mode==="signin" ? "Sign In" : "Create Account";
-  document.getElementById("forgot-link").style.display = mode==="signin" ? "block" : "none";
-  document.getElementById("auth-pass").autocomplete = mode==="signin" ? "current-password" : "new-password";
-  document.getElementById("login-error").style.display = "none";
+let authMode="signin";
+function setAuthMode(m){
+  authMode=m;
+  document.getElementById("tab-signin").classList.toggle("active",m==="signin");
+  document.getElementById("tab-signup").classList.toggle("active",m==="signup");
+  document.getElementById("auth-btn").textContent=m==="signin"?"Sign In":"Create Account";
+  document.getElementById("name-field").style.display=m==="signup"?"block":"none";
+  document.getElementById("forgot-link").style.display=m==="signin"?"block":"none";
+  document.getElementById("auth-pass").autocomplete=m==="signin"?"current-password":"new-password";
+  document.getElementById("login-error").style.display="none";
+  document.getElementById("login-ok").style.display="none";
 }
 
-async function doAuth() {
-  const email = document.getElementById("auth-email").value.trim();
-  const pass  = document.getElementById("auth-pass").value;
-  const errEl = document.getElementById("login-error");
-  errEl.style.display = "none";
-  if(!email||!pass) { errEl.textContent="Please enter your email and password."; errEl.style.display="block"; return; }
-  document.getElementById("auth-btn").disabled = true;
-  document.getElementById("auth-btn").textContent = "Please wait…";
+async function doAuth(){
+  const email=(document.getElementById("auth-email").value||"").trim();
+  const pass=document.getElementById("auth-pass").value;
+  const name=(document.getElementById("auth-name").value||"").trim();
+  const errEl=document.getElementById("login-error");
+  const okEl=document.getElementById("login-ok");
+  errEl.style.display="none"; okEl.style.display="none";
+  if(!email||!pass){errEl.textContent="Please enter email and password.";errEl.style.display="block";return;}
+  if(authMode==="signup"&&!name){errEl.textContent="Please enter your full name.";errEl.style.display="block";return;}
+  const btn=document.getElementById("auth-btn");
+  btn.disabled=true; btn.textContent="Please wait…";
   try {
-    const endpoint = authMode==="signup" ? "signup" : "token?grant_type=password";
-    const data = await sbAuth(endpoint, {email, password:pass});
-    AUTH_TOKEN = data.access_token;
-    lsSet("sb-token", AUTH_TOKEN);
-    lsSet("sb-token-exp", Date.now() + (data.expires_in||3600)*1000);
-    document.getElementById("auth-btn").disabled = false;
-    setAuthMode("signin");
-    if(authMode==="signup") {
-      // show confirmation message
-      errEl.style.color="#34d399"; errEl.textContent="✓ Account created! Check your email to confirm, then sign in."; errEl.style.display="block";
-      document.getElementById("auth-btn").textContent="Sign In";
-      return;
+    let data;
+    if(authMode==="signup"){
+      data=await sbAuth("signup",{email,password:pass,options:{data:{full_name:name}}});
+    } else {
+      data=await sbAuth("token?grant_type=password",{email,password:pass});
     }
+    btn.disabled=false; btn.textContent=authMode==="signin"?"Sign In":"Create Account";
+    if(!data.access_token){
+      okEl.textContent="✓ Account created! You can now sign in.";
+      okEl.style.display="block";
+      setAuthMode("signin"); return;
+    }
+    AUTH_TOKEN=data.access_token; REFRESH_TOKEN=data.refresh_token||"";
+    ls.set("sb-token",AUTH_TOKEN); ls.set("sb-refresh",REFRESH_TOKEN);
+    ls.set("sb-token-exp",Date.now()+(data.expires_in||3600)*1000);
+    ME={id:data.user?.id, email:data.user?.email, full_name:data.user?.user_metadata?.full_name};
+    ls.set("sb-me",JSON.stringify(ME));
     await bootApp();
-  } catch(e) {
-    document.getElementById("auth-btn").disabled = false;
-    document.getElementById("auth-btn").textContent = authMode==="signin" ? "Sign In" : "Create Account";
-    errEl.style.color="#f87171"; errEl.textContent="❌ "+e.message; errEl.style.display="block";
+  } catch(e){
+    btn.disabled=false; btn.textContent=authMode==="signin"?"Sign In":"Create Account";
+    errEl.textContent="❌ "+e.message; errEl.style.display="block";
   }
 }
 
-async function forgotPassword() {
-  const email = document.getElementById("auth-email").value.trim();
-  if(!email) { const e=document.getElementById("login-error"); e.style.color="#fbbf24"; e.textContent="Enter your email address first."; e.style.display="block"; return; }
-  try {
-    await sbAuth("recover", {email});
-    const e=document.getElementById("login-error"); e.style.color="#34d399"; e.textContent="✓ Password reset email sent. Check your inbox."; e.style.display="block";
-  } catch(err) {
-    const e=document.getElementById("login-error"); e.style.color="#f87171"; e.textContent="❌ "+err.message; e.style.display="block";
-  }
+async function forgotPassword(){
+  const email=(document.getElementById("auth-email").value||"").trim();
+  const errEl=document.getElementById("login-error"); const okEl=document.getElementById("login-ok");
+  errEl.style.display="none"; okEl.style.display="none";
+  if(!email){errEl.textContent="Enter your email address first.";errEl.style.display="block";return;}
+  try{ await sbAuth("recover",{email}); okEl.textContent="✓ Password reset email sent."; okEl.style.display="block"; }
+  catch(e){ errEl.textContent="❌ "+e.message; errEl.style.display="block"; }
 }
 
-async function refreshToken() {
-  const token = lsGet("sb-token");
+async function tryRefreshToken(){
+  const token=ls.get("sb-token"); const exp=parseInt(ls.get("sb-token-exp")||"0");
   if(!token) return false;
-  const exp = parseInt(lsGet("sb-token-exp")||"0");
-  if(Date.now() < exp - 60000) { AUTH_TOKEN=token; return true; }
+  if(Date.now()<exp-60000){ AUTH_TOKEN=token; return true; }
+  const refresh=ls.get("sb-refresh"); if(!refresh) return false;
   try {
-    const data = await sbAuth("token?grant_type=refresh_token", {refresh_token: lsGet("sb-refresh")});
-    AUTH_TOKEN = data.access_token;
-    lsSet("sb-token", AUTH_TOKEN);
-    lsSet("sb-token-exp", Date.now() + (data.expires_in||3600)*1000);
-    if(data.refresh_token) lsSet("sb-refresh", data.refresh_token);
+    const data=await sbAuth("token?grant_type=refresh_token",{refresh_token:refresh});
+    AUTH_TOKEN=data.access_token; REFRESH_TOKEN=data.refresh_token||refresh;
+    ls.set("sb-token",AUTH_TOKEN); ls.set("sb-refresh",REFRESH_TOKEN);
+    ls.set("sb-token-exp",Date.now()+(data.expires_in||3600)*1000);
     return true;
-  } catch { return false; }
+  } catch{ return false; }
 }
 
-function signOut() {
-  AUTH_TOKEN=""; lsDel("sb-token"); lsDel("sb-token-exp"); lsDel("sb-refresh");
-  leads=[]; tasks=[];
+function signOut(){
+  AUTH_TOKEN=""; ME=null;
+  ["sb-token","sb-refresh","sb-token-exp","sb-me","npm-leads","npm-tasks","npm-profiles"].forEach(k=>ls.del(k));
+  leads=[]; tasks=[]; profiles=[];
   document.getElementById("app").style.display="none";
   showLogin();
 }
 
 // ── Boot ───────────────────────────────────────────────────────────────────
-async function bootApp() {
-  // load from cache immediately
-  try{leads=JSON.parse(lsGet("npm-leads")||"[]");}catch{leads=[];}
-  try{tasks=JSON.parse(lsGet("npm-tasks")||"[]");}catch{tasks=[];}
+async function bootApp(){
+  try{leads=JSON.parse(ls.get("npm-leads")||"[]");}catch{leads=[];}
+  try{tasks=JSON.parse(ls.get("npm-tasks")||"[]");}catch{tasks=[];}
+  try{profiles=JSON.parse(ls.get("npm-profiles")||"[]");}catch{profiles=[];}
   showApp();
-  await pullAll();
-  render();
+  await pullAll(); render();
+  setInterval(async()=>{ await pullAll(); render(); }, 30000);
 }
 
-(async function init() {
-  const url = lsGet("sb-url"), key = lsGet("sb-key");
-  if(!url || !key) { showSetup(); return; }
+(async function init(){
+  const url=ls.get("sb-url"), key=ls.get("sb-key");
+  if(!url||!key){ showSetup(); return; }
   SB_URL=url; SB_KEY=key;
-  const ok = await refreshToken();
-  if(ok) { await bootApp(); }
-  else { showLogin(); }
+  const ok=await tryRefreshToken();
+  if(!ok){ showLogin(); return; }
+  try{ ME=JSON.parse(ls.get("sb-me")||"null"); }catch{ ME=null; }
+  await bootApp();
 })();
 
-// ── Tab & Render ───────────────────────────────────────────────────────────
-function switchTab(t) {
+// ── Tabs & Render ──────────────────────────────────────────────────────────
+function switchTab(t){
   tab=t;
   document.getElementById("tab-leads").classList.toggle("active",t==="leads");
   document.getElementById("tab-tasks").classList.toggle("active",t==="tasks");
-  document.getElementById("add-label").textContent=t==="leads"?"New Lead":"New Task";
   render();
 }
-function render() { updateBadges(); tab==="leads"?renderLeads():renderTasks(); }
-function updateBadges() {
+function render(){ updateBadges(); tab==="leads"?renderLeads():renderTasks(); }
+function updateBadges(){
   const p=tasks.filter(t=>!t.done).length;
   const lb=document.getElementById("leads-badge"); lb.textContent=leads.length; lb.style.background="#1a2640"; lb.style.color="#64748b";
   const tb=document.getElementById("tasks-badge"); tb.textContent=p; tb.style.background=p?"rgba(26,86,219,0.2)":"#1a2640"; tb.style.color=p?"#60a5fa":"#64748b";
 }
-const isOverdue = d => d && new Date(d+"T00:00:00") < new Date();
-const fmtDate = d => d ? new Date(d+"T00:00:00").toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"}) : "—";
-const todayStr = () => new Date().toISOString().slice(0,10);
+const isOverdue = d=>d&&new Date(d+"T00:00:00")<new Date();
+const fmtDate   = d=>d?new Date(d+"T00:00:00").toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"}):"—";
+const todayStr  = ()=>new Date().toISOString().slice(0,10);
+function profileName(id){ const p=profiles.find(p=>p.id===id); return p?(p.full_name||p.email?.split("@")[0]||"Unknown"):"Unassigned"; }
+function profileInitials(id){ return profileName(id).split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase(); }
+function avatarColor(id){ return AVATAR_COLORS[Math.abs((id||"").charCodeAt(0)%AVATAR_COLORS.length)]; }
 
 // ── Leads render ───────────────────────────────────────────────────────────
-function renderLeads() {
+function renderLeads(){
   const counts=STATUSES.reduce((a,s)=>({...a,[s]:leads.filter(l=>l.status===s).length}),{});
-  const filtered=leads
+  const myLeads = leads.filter(l=>l.assignedTo===ME?.id);
+  const unassigned = leads.filter(l=>!l.assignedTo);
+
+  let filtered=leads
     .filter(l=>lFilter==="All"||l.status===lFilter)
-    .filter(l=>!lSearch||[l.name,l.email,l.phone,l.propertyAddress,l.source].some(v=>v?.toLowerCase().includes(lSearch.toLowerCase())))
+    .filter(l=>lAssign==="mine"?l.assignedTo===ME?.id:lAssign==="unassigned"?!l.assignedTo:true)
+    .filter(l=>!lSearch||[l.name,l.email,l.phone,l.propertyAddress,l.source,l.area].some(v=>v?.toLowerCase().includes(lSearch.toLowerCase())))
     .sort((a,b)=>lSort==="name"?a.name.localeCompare(b.name):lSort==="oldest"?a.createdAt-b.createdAt:b.createdAt-a.createdAt);
 
   let h=`<div class="pipeline">`;
-  STATUSES.forEach(s=>{const c=SC[s]; h+=`<div class="pipeline-card${lFilter===s?" active":""}" style="--card-color:${c.color};--card-bg:${c.bg}" onclick="setLFilter('${s}')"><div class="pipeline-num" style="color:${c.color}">${counts[s]||0}</div><div class="pipeline-label">${s}</div></div>`;});
-  h+=`</div><div class="toolbar">
+  STATUSES.forEach(s=>{const c=SC[s]; h+=`<div class="p-card${lFilter===s?" active":""}" style="--cc:${c.color};--cb:${c.bg}" onclick="setLFilter('${s}')"><div class="p-num" style="color:${c.color}">${counts[s]||0}</div><div class="p-lbl">${s}</div></div>`;});
+  h+=`</div>`;
+
+  // assign filter pills + search
+  h+=`<div class="toolbar">
     <input class="search-box" placeholder="Search…" value="${esc(lSearch)}" oninput="lSearch=this.value;render()"/>
     <select class="sort-sel" onchange="lSort=this.value;render()"><option value="newest"${lSort==="newest"?" selected":""}>Newest</option><option value="oldest"${lSort==="oldest"?" selected":""}>Oldest</option><option value="name"${lSort==="name"?" selected":""}>A–Z</option></select>
-    ${lFilter!=="All"?`<button class="btn btn-ghost" style="padding:6px 10px;font-size:12px" onclick="lFilter='All';render()">Clear ✕</button>`:""}
-    <span class="count">${filtered.length}/${leads.length}</span></div>`;
+    ${lFilter!=="All"?`<button class="btn btn-ghost" style="padding:5px 9px;font-size:11px" onclick="lFilter='All';render()">Clear ✕</button>`:""}
+    <span class="count">${filtered.length}/${leads.length}</span>
+  </div>
+  <div class="toolbar" style="margin-top:-4px">
+    <div class="filter-pills">
+      <button class="pill${lAssign==="all"?" active":""}" onclick="lAssign='all';render()">All Leads</button>
+      <button class="pill${lAssign==="mine"?" active":""}" onclick="lAssign='mine';render()">Mine (${myLeads.length})</button>
+      <button class="pill${lAssign==="unassigned"?" active":""}" onclick="lAssign='unassigned';render()">Unassigned (${unassigned.length})</button>
+    </div>
+    <button class="add-btn" onclick="openAddModal()" style="padding:6px 12px;font-size:12px"><span style="font-size:15px">+</span> New Lead</button>
+  </div>`;
 
-  if(!filtered.length){h+=`<div class="empty"><div class="empty-icon">🏘️</div><div class="empty-text">${leads.length===0?"No leads yet.":"No leads match."}</div>${leads.length===0?`<button class="btn btn-primary" onclick="openAddModal()">Add First Lead</button>`:""}</div>`;}
-  else filtered.forEach(l=>{
-    const od=isOverdue(l.followUp),c=SC[l.status]||{};
-    h+=`<div class="lead-card">
-      <div class="lead-name">${esc(l.name||"—")}</div>
-      ${l.email||l.phone?`<div class="lead-contact">${esc(l.email||l.phone)}</div>`:""}
-      ${l.propertyAddress?`<div class="lead-address">📍 ${esc(l.propertyAddress)}</div>`:""}
-      <div class="lead-meta"><span class="chip" style="color:${c.color};background:${c.bg};border:1px solid ${c.color}44">${l.status}</span><span class="chip" style="color:#94a3b8;background:#1a2640">${esc(l.propertyType)}</span>${l.monthlyRent?`<span class="chip" style="color:#34d399;background:rgba(52,211,153,0.1)">${esc(l.monthlyRent)}/mo</span>`:""}</div>
-      <div class="lead-footer">
-        <select class="status-sel" style="color:${c.color};background:${c.bg};border-color:${c.color}44" onchange="updateLeadStatus('${l.id}',this.value)">${STATUSES.map(s=>`<option value="${s}"${l.status===s?" selected":""}>${s}</option>`).join("")}</select>
-        ${l.followUp?`<div class="follow-up" style="color:${od?"#f87171":"#fbbf24"}">📅 ${fmtDate(l.followUp)}${od?`<span class="overdue-label">OVERDUE</span>`:""}</div>`:""}
-        <div class="lead-actions"><button class="btn-sm btn-edit" onclick="editLead('${l.id}')">Edit</button><button class="btn-sm btn-del" onclick="deleteLead('${l.id}')">✕</button></div>
-      </div></div>`;
-  });
+  if(!filtered.length){
+    h+=`<div class="empty"><div class="empty-icon">🏘️</div><div class="empty-text">${leads.length===0?"No leads yet.":lAssign==="mine"?"No leads assigned to you yet.":lAssign==="unassigned"?"No unassigned leads.":"No leads match."}</div>${leads.length===0?`<button class="btn btn-primary" onclick="openAddModal()">Add First Lead</button>`:""}</div>`;
+  } else {
+    filtered.forEach(l=>{
+      const od=isOverdue(l.followUp), c=SC[l.status]||{};
+      const isMe=l.assignedTo===ME?.id;
+      h+=`<div class="lead-card">
+        <div class="lead-name">${esc(l.name||"—")}</div>
+        ${l.email||l.phone?`<div class="lead-contact">${esc(l.email||l.phone)}</div>`:""}
+        ${l.propertyAddress?`<div class="lead-address">📍 ${esc(l.propertyAddress)}</div>`:""}
+        <div class="lead-meta">
+          <span class="chip" style="color:${c.color};background:${c.bg};border:1px solid ${c.color}44">${l.status}</span>
+          <span class="chip" style="color:#94a3b8;background:#1a2640">${esc(l.propertyType||"")}</span>
+          ${l.area?`<span class="chip" style="color:var(--blue-l);background:rgba(74,158,255,0.1)">📍 ${esc(l.area)}</span>`:""}
+          ${l.monthlyRent?`<span class="chip" style="color:#34d399;background:rgba(52,211,153,0.1)">${esc(l.monthlyRent)}/mo</span>`:""}
+        </div>
+        <div class="assigned-row">
+          ${l.assignedTo
+            ? `<div class="avatar" style="background:${avatarColor(l.assignedTo)}">${profileInitials(l.assignedTo)}</div><div class="assigned-name">${isMe?"You (assigned)":profileName(l.assignedTo)}</div>${!isMe?`<button class="claim-btn" onclick="claimLead('${l.id}')">Claim →</button>`:""}`
+            : `<div class="avatar" style="background:var(--faint);font-size:12px">?</div><div class="assigned-name" style="color:var(--faint)">Unassigned</div><button class="claim-btn" onclick="claimLead('${l.id}')">Claim →</button>`}
+        </div>
+        <div class="lead-footer">
+          <select class="status-sel" style="color:${c.color};background:${c.bg};border-color:${c.color}44" onchange="updateLeadStatus('${l.id}',this.value)">${STATUSES.map(s=>`<option value="${s}"${l.status===s?" selected":""}>${s}</option>`).join("")}</select>
+          ${l.followUp?`<div style="font-size:11px;font-weight:600;color:${od?"#f87171":"#fbbf24"}">📅 ${fmtDate(l.followUp)}${od?`<span class="overdue-lbl">OVERDUE</span>`:""}</div>`:""}
+          <div class="lead-actions">
+            <button class="btn-sm btn-edit" onclick="editLead('${l.id}')">Edit</button>
+            <button class="btn-sm btn-del" onclick="deleteLead('${l.id}')">✕</button>
+          </div>
+        </div>
+      </div>`;
+    });
+  }
   document.getElementById("content").innerHTML=h;
 }
 
 // ── Tasks render ───────────────────────────────────────────────────────────
-function renderTasks() {
+function renderTasks(){
   const pending=tasks.filter(t=>!t.done), overdue=pending.filter(t=>isOverdue(t.dueDate)), dueToday=pending.filter(t=>t.dueDate===todayStr());
   const filtered=tasks
     .filter(t=>tFilter==="all"?true:tFilter==="done"?t.done:!t.done)
@@ -596,111 +723,151 @@ function renderTasks() {
     <div class="summary-card" style="background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.2)"><div class="summary-num" style="color:#fbbf24">${dueToday.length}</div><div class="summary-label">Due Today</div></div>
     <div class="summary-card" style="background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.2)"><div class="summary-num" style="color:#34d399">${tasks.filter(t=>t.done).length}</div><div class="summary-label">Completed</div></div>
   </div>`;
-  if(overdue.length) h+=`<div class="alert-bar"><div class="alert alert-red">⚠ ${overdue.length} overdue</div></div>`;
+  if(overdue.length) h+=`<div class="alert-bar"><div class="alert alert-red">⚠ ${overdue.length} overdue task${overdue.length>1?"s":""}</div></div>`;
   if(dueToday.length) h+=`<div class="alert-bar"><div class="alert alert-yellow">📅 ${dueToday.length} due today</div></div>`;
-  h+=`<div class="toolbar"><input class="search-box" placeholder="Search tasks…" value="${esc(tSearch)}" oninput="tSearch=this.value;render()"/>
-    <div class="filter-pills">${[["pending","Pending"],["done","Done"],["all","All"]].map(([v,l])=>`<button class="pill${tFilter===v?" active":""}" onclick="tFilter='${v}';render()">${l}</button>`).join("")}</div>
-    <span class="count">${filtered.length}</span></div>`;
 
-  if(!filtered.length){h+=`<div class="empty"><div class="empty-icon">✅</div><div class="empty-text">${tasks.length===0?"No tasks yet.":"Nothing here."}</div>${tasks.length===0?`<button class="btn btn-primary" onclick="openAddModal()">Add First Task</button>`:""}</div>`;}
-  else filtered.forEach(t=>{
-    const od=!t.done&&isOverdue(t.dueDate), isTdy=!t.done&&t.dueDate===todayStr(), linked=leads.find(l=>l.id===t.leadId);
-    h+=`<div class="task-card${t.done?" done":""}${od?" overdue":isTdy?" today":""}">
-      <button class="checkbox${t.done?" checked":""}" onclick="toggleTask('${t.id}')">${t.done?"✓":""}</button>
-      <div class="task-body"><div class="task-title">${esc(t.title||"Untitled")}</div>
-      <div class="task-meta"><span class="chip" style="color:${PC[t.priority]};background:${PC[t.priority]}18;border:1px solid ${PC[t.priority]}33">${t.priority}</span><span class="chip" style="color:#64748b;background:#1a2640">${esc(t.type)}</span>
-      ${t.dueDate?`<span style="color:${od?"#f87171":isTdy?"#fbbf24":"#64748b"};font-weight:${od||isTdy?700:400}">📅${od?" Overdue ·":isTdy?" Today ·":""} ${fmtDate(t.dueDate)}</span>`:""}
-      ${linked?`<span style="color:#4a9eff">🔗 ${esc(linked.name||"Lead")}</span>`:""}</div>
-      ${t.notes?`<div style="font-size:12px;color:#475569;margin-top:4px;font-style:italic">${esc(t.notes)}</div>`:""}</div>
-      <div class="task-actions"><button class="btn-sm btn-edit" onclick="editTask('${t.id}')">Edit</button><button class="btn-sm btn-del" onclick="deleteTask('${t.id}')">✕</button></div></div>`;
-  });
+  h+=`<div class="toolbar">
+    <input class="search-box" placeholder="Search tasks…" value="${esc(tSearch)}" oninput="tSearch=this.value;render()"/>
+    <div class="filter-pills">${[["pending","Pending"],["done","Done"],["all","All"]].map(([v,l])=>`<button class="pill${tFilter===v?" active":""}" onclick="tFilter='${v}';render()">${l}</button>`).join("")}</div>
+    <button class="add-btn" onclick="openAddModal()" style="padding:6px 12px;font-size:12px"><span style="font-size:15px">+</span> New Task</button>
+  </div>`;
+
+  if(!filtered.length){
+    h+=`<div class="empty"><div class="empty-icon">✅</div><div class="empty-text">${tasks.length===0?"No tasks yet.":"Nothing here."}</div>${tasks.length===0?`<button class="btn btn-primary" onclick="openAddModal()">Add First Task</button>`:""}</div>`;
+  } else {
+    filtered.forEach(t=>{
+      const od=!t.done&&isOverdue(t.dueDate), isTdy=!t.done&&t.dueDate===todayStr(), linked=leads.find(l=>l.id===t.leadId);
+      h+=`<div class="task-card${t.done?" done":""}${od?" overdue":isTdy?" today":""}">
+        <button class="checkbox${t.done?" checked":""}" onclick="toggleTask('${t.id}')">${t.done?"✓":""}</button>
+        <div class="task-body">
+          <div class="task-title">${esc(t.title||"Untitled")}</div>
+          <div class="task-meta">
+            <span class="chip" style="color:${PC[t.priority]};background:${PC[t.priority]}18;border:1px solid ${PC[t.priority]}33">${t.priority}</span>
+            <span class="chip" style="color:#64748b;background:#1a2640">${esc(t.type)}</span>
+            ${t.dueDate?`<span style="color:${od?"#f87171":isTdy?"#fbbf24":"#64748b"};font-weight:${od||isTdy?700:400}">📅${od?" Overdue ·":isTdy?" Today ·":""} ${fmtDate(t.dueDate)}</span>`:""}
+            ${linked?`<span style="color:#4a9eff">🔗 ${esc(linked.name||"Lead")}</span>`:""}
+          </div>
+          ${t.notes?`<div style="font-size:12px;color:#475569;margin-top:3px;font-style:italic">${esc(t.notes)}</div>`:""}
+        </div>
+        <div class="task-actions">
+          <button class="btn-sm btn-edit" onclick="editTask('${t.id}')">Edit</button>
+          <button class="btn-sm btn-del" onclick="deleteTask('${t.id}')">✕</button>
+        </div>
+      </div>`;
+    });
+  }
   document.getElementById("content").innerHTML=h;
 }
 
 // ── CRUD ───────────────────────────────────────────────────────────────────
-function setLFilter(s){lFilter=lFilter===s?"All":s;render();}
+function setLFilter(s){ lFilter=lFilter===s?"All":s; render(); }
+
+function claimLead(id){
+  leads=leads.map(l=>l.id===id?{...l,assignedTo:ME?.id,updatedAt:Date.now()}:l);
+  ls.set("npm-leads",JSON.stringify(leads)); upsertLead(leads.find(l=>l.id===id)); render();
+}
 function updateLeadStatus(id,status){
   leads=leads.map(l=>l.id===id?{...l,status,updatedAt:Date.now()}:l);
-  lsSet("npm-leads",JSON.stringify(leads)); upsertLead(leads.find(l=>l.id===id)); render();
+  ls.set("npm-leads",JSON.stringify(leads)); upsertLead(leads.find(l=>l.id===id)); render();
 }
 function deleteLead(id){
   if(!confirm("Remove this lead?"))return;
-  leads=leads.filter(l=>l.id!==id); lsSet("npm-leads",JSON.stringify(leads)); deleteSbLead(id); render();
+  leads=leads.filter(l=>l.id!==id); ls.set("npm-leads",JSON.stringify(leads)); deleteSbLead(id); render();
 }
 function toggleTask(id){
   tasks=tasks.map(t=>t.id===id?{...t,done:!t.done,updatedAt:Date.now()}:t);
-  lsSet("npm-tasks",JSON.stringify(tasks)); upsertTask(tasks.find(t=>t.id===id)); render();
+  ls.set("npm-tasks",JSON.stringify(tasks)); upsertTask(tasks.find(t=>t.id===id)); render();
 }
 function deleteTask(id){
   if(!confirm("Remove this task?"))return;
-  tasks=tasks.filter(t=>t.id!==id); lsSet("npm-tasks",JSON.stringify(tasks)); deleteSbTask(id); render();
+  tasks=tasks.filter(t=>t.id!==id); ls.set("npm-tasks",JSON.stringify(tasks)); deleteSbTask(id); render();
 }
 
 // ── Modal ──────────────────────────────────────────────────────────────────
-function openAddModal(){modalMode=tab==="leads"?"newLead":"newTask";modalId=null;openModal();}
-function editLead(id){modalMode="editLead";modalId=id;openModal();}
-function editTask(id){modalMode="editTask";modalId=id;openModal();}
+function openAddModal(){ modalMode=tab==="leads"?"newLead":"newTask"; modalId=null; openModal(); }
+function editLead(id){ modalMode="editLead"; modalId=id; openModal(); }
+function editTask(id){ modalMode="editTask"; modalId=id; openModal(); }
 function openModal(){
   const isLead=modalMode.includes("Lead");
   const ex=isLead?(leads.find(l=>l.id===modalId)||{}):(tasks.find(t=>t.id===modalId)||{});
   document.getElementById("modal-title").textContent=modalMode==="newLead"?"Add New Lead":modalMode==="editLead"?"Edit Lead":modalMode==="newTask"?"Add New Task":"Edit Task";
   document.getElementById("modal-save").textContent=modalMode.startsWith("new")?"Add":"Save Changes";
   document.getElementById("modal-body").innerHTML=isLead?leadForm(ex):taskForm(ex);
-  document.getElementById("modal").style.display="flex";
-  document.body.style.overflow="hidden";
+  document.getElementById("modal").style.display="flex"; document.body.style.overflow="hidden";
   setTimeout(()=>document.querySelector(".modal-body input")?.focus(),150);
 }
-function closeModal(){document.getElementById("modal").style.display="none";document.body.style.overflow="";}
-function maybeCloseModal(e){if(e.target===document.getElementById("modal"))closeModal();}
+function closeModal(){ document.getElementById("modal").style.display="none"; document.body.style.overflow=""; }
+function maybeClose(e){ if(e.target===document.getElementById("modal"))closeModal(); }
+
 function saveModal(){
   const isLead=modalMode.includes("Lead");
   if(isLead){
     const f=getLeadForm(); if(!f.name.trim()){alert("Please enter a contact name.");return;}
     let lead;
-    if(modalMode==="editLead"){lead={...f,id:modalId,createdAt:leads.find(l=>l.id===modalId).createdAt,updatedAt:Date.now()};leads=leads.map(l=>l.id===modalId?lead:l);}
-    else{lead={...f,id:uid(),createdAt:Date.now(),updatedAt:Date.now()};leads=[lead,...leads];}
-    lsSet("npm-leads",JSON.stringify(leads)); upsertLead(lead);
+    if(modalMode==="editLead"){
+      const old=leads.find(l=>l.id===modalId);
+      lead={...f, id:modalId, assignedTo:old.assignedTo, createdBy:old.createdBy, createdAt:old.createdAt, updatedAt:Date.now()};
+      leads=leads.map(l=>l.id===modalId?lead:l);
+    } else {
+      lead={...f, id:uid(), assignedTo:f.assignedTo||null, createdBy:ME?.id, createdAt:Date.now(), updatedAt:Date.now()};
+      leads=[lead,...leads];
+    }
+    ls.set("npm-leads",JSON.stringify(leads)); upsertLead(lead);
   } else {
     const f=getTaskForm(); if(!f.title.trim()){alert("Please enter a task title.");return;}
     let task;
-    if(modalMode==="editTask"){const old=tasks.find(t=>t.id===modalId);task={...f,id:modalId,done:old.done,createdAt:old.createdAt,updatedAt:Date.now()};tasks=tasks.map(t=>t.id===modalId?task:t);}
-    else{task={...f,id:uid(),done:false,createdAt:Date.now(),updatedAt:Date.now()};tasks=[task,...tasks];}
-    lsSet("npm-tasks",JSON.stringify(tasks)); upsertTask(task);
+    if(modalMode==="editTask"){
+      const old=tasks.find(t=>t.id===modalId);
+      task={...f, id:modalId, done:old.done, createdBy:old.createdBy, createdAt:old.createdAt, updatedAt:Date.now()};
+      tasks=tasks.map(t=>t.id===modalId?task:t);
+    } else {
+      task={...f, id:uid(), done:false, createdBy:ME?.id, createdAt:Date.now(), updatedAt:Date.now()};
+      tasks=[task,...tasks];
+    }
+    ls.set("npm-tasks",JSON.stringify(tasks)); upsertTask(task);
   }
   closeModal(); render();
 }
-const g = id => document.getElementById(id)?.value||"";
-function getLeadForm(){return{name:g("f-name"),phone:g("f-phone"),email:g("f-email"),propertyAddress:g("f-addr"),propertyType:g("f-ptype"),units:g("f-units"),monthlyRent:g("f-rent"),source:g("f-source"),status:g("f-status"),followUp:g("f-followup"),notes:g("f-notes")};}
-function getTaskForm(){return{title:g("f-title"),type:g("f-type"),priority:g("f-priority"),dueDate:g("f-due"),leadId:g("f-lead"),notes:g("f-tnotes")};}
 
-function sel(id,opts,val){return`<select id="${id}" class="field-input">${opts.map(o=>`<option${o===val?" selected":""}>${o}</option>`).join("")}</select>`;}
-function leadForm(e){return`<div class="modal-grid">
-  <div class="full"><label class="field-label">Owner / Contact Name</label><input id="f-name" class="field-input" value="${esc(e.name||"")}" placeholder="Full name"/></div>
-  <div><label class="field-label">Phone</label><input id="f-phone" class="field-input" value="${esc(e.phone||"")}" type="tel" placeholder="(555) 000-0000"/></div>
-  <div><label class="field-label">Email</label><input id="f-email" class="field-input" value="${esc(e.email||"")}" type="email" placeholder="email@example.com"/></div>
-  <div class="full"><label class="field-label">Property Address</label><input id="f-addr" class="field-input" value="${esc(e.propertyAddress||"")}" placeholder="123 Main St, City, State ZIP"/></div>
-  <div><label class="field-label">Property Type</label>${sel("f-ptype",PTYPES,e.propertyType||"Single Family")}</div>
-  <div><label class="field-label">Units</label><input id="f-units" class="field-input" type="number" min="1" value="${esc(e.units||"1")}"/></div>
-  <div><label class="field-label">Est. Monthly Rent</label><input id="f-rent" class="field-input" value="${esc(e.monthlyRent||"")}" placeholder="$1,500"/></div>
-  <div><label class="field-label">Lead Source</label>${sel("f-source",SOURCES,e.source||"HHHB Referral")}</div>
-  <div><label class="field-label">Status</label>${sel("f-status",STATUSES,e.status||"New Lead")}</div>
-  <div><label class="field-label">Follow-Up Date</label><input id="f-followup" class="field-input" type="date" value="${esc(e.followUp||"")}"/></div>
-  <div class="full"><label class="field-label">Notes</label><textarea id="f-notes" class="field-input">${esc(e.notes||"")}</textarea></div>
-</div>`;}
-function taskForm(e){
-  const leadOpts=`<option value="">— No lead linked —</option>${leads.map(l=>`<option value="${l.id}"${l.id===e.leadId?" selected":""}>${esc(l.name||"Unnamed")}${l.propertyAddress?" · "+l.propertyAddress.slice(0,28):""}</option>`).join("")}`;
+const gv = id => document.getElementById(id)?.value||"";
+function getLeadForm(){ return{name:gv("f-name"),phone:gv("f-phone"),email:gv("f-email"),propertyAddress:gv("f-addr"),propertyType:gv("f-ptype"),units:gv("f-units"),monthlyRent:gv("f-rent"),source:gv("f-source"),area:gv("f-area"),status:gv("f-status"),assignedTo:gv("f-assign")||null,followUp:gv("f-followup"),notes:gv("f-notes")}; }
+function getTaskForm(){ return{title:gv("f-title"),type:gv("f-type"),priority:gv("f-priority"),dueDate:gv("f-due"),leadId:gv("f-lead"),notes:gv("f-tnotes")}; }
+
+function mkSel(id,opts,val){ return`<select id="${id}" class="field-input">${opts.map(o=>`<option${o===val?" selected":""}>${o}</option>`).join("")}</select>`; }
+
+function leadForm(e){
+  const teamOpts=`<option value="">— Unassigned —</option>${profiles.map(p=>`<option value="${p.id}"${p.id===e.assignedTo?" selected":""}>${p.id===ME?.id?"Me — ":""} ${esc(p.full_name||p.email||"Unknown")}</option>`).join("")}`;
   return`<div class="modal-grid">
-  <div class="full"><label class="field-label">Task Title</label><input id="f-title" class="field-input" value="${esc(e.title||"")}" placeholder="e.g. Call about 3BR on Maple Ave"/></div>
-  <div><label class="field-label">Task Type</label>${sel("f-type",TASK_TYPES,e.type||"Call")}</div>
-  <div><label class="field-label">Priority</label>${sel("f-priority",PRIORITIES,e.priority||"High")}</div>
-  <div><label class="field-label">Due Date</label><input id="f-due" class="field-input" type="date" value="${esc(e.dueDate||"")}"/></div>
-  <div><label class="field-label">Linked Lead</label><select id="f-lead" class="field-input">${leadOpts}</select></div>
-  <div class="full"><label class="field-label">Notes</label><textarea id="f-tnotes" class="field-input">${esc(e.notes||"")}</textarea></div>
-</div>`;}
+    <div class="full"><label class="field-label">Owner / Contact Name</label><input id="f-name" class="field-input" value="${esc(e.name||"")}" placeholder="Full name"/></div>
+    <div><label class="field-label">Phone</label><input id="f-phone" class="field-input" value="${esc(e.phone||"")}" type="tel" placeholder="(555) 000-0000"/></div>
+    <div><label class="field-label">Email</label><input id="f-email" class="field-input" value="${esc(e.email||"")}" type="email" placeholder="email@example.com"/></div>
+    <div class="full"><label class="field-label">Property Address</label><input id="f-addr" class="field-input" value="${esc(e.propertyAddress||"")}" placeholder="123 Main St, City, State ZIP"/></div>
+    <div><label class="field-label">Property Type</label>${mkSel("f-ptype",PTYPES,e.propertyType||"Single Family")}</div>
+    <div><label class="field-label">Units</label><input id="f-units" class="field-input" type="number" min="1" value="${esc(e.units||"1")}"/></div>
+    <div><label class="field-label">Est. Monthly Rent</label><input id="f-rent" class="field-input" value="${esc(e.monthlyRent||"")}" placeholder="$1,500"/></div>
+    <div><label class="field-label">Area / Territory</label>${mkSel("f-area",[""].concat(AREAS),e.area||"")}</div>
+    <div><label class="field-label">Lead Source</label>${mkSel("f-source",SOURCES,e.source||"HHHB Referral")}</div>
+    <div><label class="field-label">Status</label>${mkSel("f-status",STATUSES,e.status||"New Lead")}</div>
+    <div><label class="field-label">Assigned To</label><select id="f-assign" class="field-input">${teamOpts}</select></div>
+    <div><label class="field-label">Follow-Up Date</label><input id="f-followup" class="field-input" type="date" value="${esc(e.followUp||"")}"/></div>
+    <div class="full"><label class="field-label">Notes</label><textarea id="f-notes" class="field-input">${esc(e.notes||"")}</textarea></div>
+  </div>`;
+}
+function taskForm(e){
+  const leadOpts=`<option value="">— No lead linked —</option>${leads.map(l=>`<option value="${l.id}"${l.id===e.leadId?" selected":""}>${esc(l.name||"Unnamed")}${l.propertyAddress?" · "+l.propertyAddress.slice(0,26):""}</option>`).join("")}`;
+  return`<div class="modal-grid">
+    <div class="full"><label class="field-label">Task Title</label><input id="f-title" class="field-input" value="${esc(e.title||"")}" placeholder="e.g. Call about 3BR on Maple Ave"/></div>
+    <div><label class="field-label">Task Type</label>${mkSel("f-type",TASK_TYPES,e.type||"Call")}</div>
+    <div><label class="field-label">Priority</label>${mkSel("f-priority",PRIORITIES,e.priority||"High")}</div>
+    <div><label class="field-label">Due Date</label><input id="f-due" class="field-input" type="date" value="${esc(e.dueDate||"")}"/></div>
+    <div><label class="field-label">Linked Lead</label><select id="f-lead" class="field-input">${leadOpts}</select></div>
+    <div class="full"><label class="field-label">Notes</label><textarea id="f-tnotes" class="field-input">${esc(e.notes||"")}</textarea></div>
+  </div>`;
+}
 
 // ── Utils ──────────────────────────────────────────────────────────────────
-function uid(){return crypto.randomUUID?crypto.randomUUID():Math.random().toString(36).slice(2)+Date.now().toString(36);}
-function esc(s){return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
+function uid(){ return crypto.randomUUID?crypto.randomUUID():Math.random().toString(36).slice(2)+Date.now().toString(36); }
+function esc(s){ return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
 </script>
 </body>
 </html>
