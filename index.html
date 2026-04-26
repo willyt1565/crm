@@ -263,13 +263,13 @@ create policy "team tasks" on tasks for all
       <div class="step-title">Enter your project credentials</div>
       <div class="step-body">Go to <strong>Project Settings → API</strong> → copy your <strong>Project URL</strong> and <strong>anon public</strong> key.
         <div class="field-group">
-          <div><label class="field-label">Project URL</label><input id="sb-url" class="field-input" placeholder="https://xxxxxxxxxxxx.supabase.co" type="url" autocomplete="off" spellcheck="false"/></div>
-          <div><label class="field-label">Anon Public Key</label><input id="sb-key" class="field-input" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." autocomplete="off" spellcheck="false"/></div>
+          <div><label class="field-label">Project URL</label><input id="sb-url" class="field-input" placeholder="https://xxxxxxxxxxxx.supabase.co" type="text" autocomplete="off" spellcheck="false" inputmode="url"/></div>
+          <div><label class="field-label">Anon Public Key</label><input id="sb-key" class="field-input" placeholder="sb_publishable_... or eyJhbGci..." type="text" autocomplete="off" spellcheck="false"/></div>
         </div>
       </div>
     </div>
 
-    <button class="big-btn" id="setup-btn" onclick="finishSetup()">Save & Continue →</button>
+    <button class="big-btn" id="setup-btn" onclick="finishSetup()">Save & Go to Login →</button>
     <div class="msg-error" id="setup-error"></div>
     <p style="font-size:11px;color:var(--faint);margin-top:14px;text-align:center;line-height:1.6">Share this URL with your team. Anyone who opens it can create their own account.</p>
   </div>
@@ -307,7 +307,7 @@ create policy "team tasks" on tasks for all
     <div class="msg-error" id="login-error"></div>
     <div class="msg-ok" id="login-ok"></div>
     <button class="link-btn" id="forgot-link" onclick="forgotPassword()">Forgot password?</button>
-    <button class="link-btn" style="color:var(--dim);font-size:11px;margin-top:12px" onclick="showSetup()">⚙ Admin setup</button>
+    <button class="link-btn" style="color:var(--blue-l);font-size:13px;font-weight:700;margin-top:16px;padding:10px;border:1px solid var(--border2);border-radius:8px;width:100%" onclick="showSetup()">⚙ First-time setup — tap here</button>
   </div>
 </div>
 
@@ -378,7 +378,7 @@ let leads=[], tasks=[], profiles=[], tab="leads";
 let lFilter="All", lSearch="", lSort="newest", lAssign="all";
 let tFilter="pending", tSearch="";
 let modalMode=null, modalId=null;
-let SB_URL="", SB_KEY="", AUTH_TOKEN="", REFRESH_TOKEN="", ME=null;
+let SB_URL="https://cjwlstwugkqhycqteikz.supabase.co", SB_KEY="sb_publishable_Wihuq7Yk3scfPg4NIX1vcQ_-jGsTOqP", AUTH_TOKEN="", REFRESH_TOKEN="", ME=null;
 
 // ── Storage ────────────────────────────────────────────────────────────────
 const ls = {
@@ -492,31 +492,17 @@ function copySql(){
   const t=document.getElementById("sql-block").innerText.replace(/Copy$/,"").trim();
   navigator.clipboard.writeText(t).then(()=>{const b=document.querySelector(".copy-btn");b.textContent="Copied!";setTimeout(()=>b.textContent="Copy",2000);});
 }
-async function finishSetup(){
+function finishSetup(){
   const url=(document.getElementById("sb-url").value||"").trim().replace(/\/$/,"");
   const key=(document.getElementById("sb-key").value||"").trim();
   const errEl=document.getElementById("setup-error");
   errEl.style.display="none";
-  if(!url||!key){errEl.textContent="Please fill in both fields.";errEl.style.display="block";return;}
-  if(!url.startsWith("https://")){errEl.textContent="URL must start with https://";errEl.style.display="block";return;}
-  document.getElementById("setup-btn").disabled=true;
-  document.getElementById("setup-btn").textContent="Connecting…";
+  if(!url) { errEl.textContent="Please enter your Project URL."; errEl.style.display="block"; return; }
+  if(!key) { errEl.textContent="Please enter your API key."; errEl.style.display="block"; return; }
+  if(!url.startsWith("https://")) { errEl.textContent="Project URL must start with https://"; errEl.style.display="block"; return; }
   SB_URL=url; SB_KEY=key;
-  try {
-    // Any HTTP response (even 401/406) means Supabase is reachable
-    await fetch(SB_URL+"/rest/v1/profiles?limit=1", {
-      headers:{"apikey":SB_KEY}
-    });
-    ls.set("sb-url",url); ls.set("sb-key",key);
-    document.getElementById("setup-btn").disabled=false;
-    document.getElementById("setup-btn").textContent="Save & Continue →";
-    showLogin();
-  } catch(e){
-    document.getElementById("setup-btn").disabled=false;
-    document.getElementById("setup-btn").textContent="Save & Continue →";
-    errEl.textContent="❌ Could not reach Supabase. Double-check your Project URL — it should look like https://abcdefgh.supabase.co";
-    errEl.style.display="block";
-  }
+  ls.set("sb-url",url); ls.set("sb-key",key);
+  showLogin();
 }
 
 // ── Auth ───────────────────────────────────────────────────────────────────
@@ -611,9 +597,8 @@ async function bootApp(){
 }
 
 (async function init(){
-  const url=ls.get("sb-url"), key=ls.get("sb-key");
-  if(!url||!key){ showSetup(); return; }
-  SB_URL=url; SB_KEY=key;
+  // Credentials are hardcoded — skip setup, go straight to login or app
+  ls.set("sb-url", SB_URL); ls.set("sb-key", SB_KEY);
   const ok=await tryRefreshToken();
   if(!ok){ showLogin(); return; }
   try{ ME=JSON.parse(ls.get("sb-me")||"null"); }catch{ ME=null; }
