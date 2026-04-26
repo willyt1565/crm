@@ -389,16 +389,15 @@ const ls = {
 
 // ── Supabase REST ──────────────────────────────────────────────────────────
 async function sb(path, opts={}) {
-  const res = await fetch(SB_URL+"/rest/v1/"+path, {
-    ...opts,
-    headers: {
-      "apikey": SB_KEY,
-      "Authorization": "Bearer "+(AUTH_TOKEN||SB_KEY),
-      "Content-Type": "application/json",
-      "Prefer": "return=minimal",
-      ...(opts.headers||{})
-    }
-  });
+  const headers = {
+    "apikey": SB_KEY,
+    "Content-Type": "application/json",
+    "Prefer": "return=minimal",
+    ...(opts.headers||{})
+  };
+  // Only add Authorization when we have a real user JWT (not the API key itself)
+  if(AUTH_TOKEN) headers["Authorization"] = "Bearer "+AUTH_TOKEN;
+  const res = await fetch(SB_URL+"/rest/v1/"+path, {...opts, headers});
   if(!res.ok){ const e=await res.json().catch(()=>({message:"Error "+res.status})); throw new Error(e.message||e.hint||"Supabase error"); }
   return res.status===204 ? null : res.json();
 }
@@ -500,14 +499,13 @@ async function finishSetup(){
   errEl.style.display="none";
   if(!url||!key){errEl.textContent="Please fill in both fields.";errEl.style.display="block";return;}
   if(!url.startsWith("https://")){errEl.textContent="URL must start with https://";errEl.style.display="block";return;}
-  if(!url.includes("supabase.co")){errEl.textContent="That doesn\'t look like a Supabase URL. Copy it from Project Settings → API.";errEl.style.display="block";return;}
   document.getElementById("setup-btn").disabled=true;
   document.getElementById("setup-btn").textContent="Connecting…";
   SB_URL=url; SB_KEY=key;
   try {
-    // Any HTTP response (even 401) means Supabase is reachable
+    // Any HTTP response (even 401/406) means Supabase is reachable
     await fetch(SB_URL+"/rest/v1/profiles?limit=1", {
-      headers:{"apikey":SB_KEY,"Authorization":"Bearer "+SB_KEY}
+      headers:{"apikey":SB_KEY}
     });
     ls.set("sb-url",url); ls.set("sb-key",key);
     document.getElementById("setup-btn").disabled=false;
