@@ -546,8 +546,18 @@ async function doAuth(){
     AUTH_TOKEN=data.access_token; REFRESH_TOKEN=data.refresh_token||"";
     ls.set("sb-token",AUTH_TOKEN); ls.set("sb-refresh",REFRESH_TOKEN);
     ls.set("sb-token-exp",Date.now()+(data.expires_in||3600)*1000);
-    ME={id:data.user?.id, email:data.user?.email, full_name:data.user?.user_metadata?.full_name};
+    ME={id:data.user?.id, email:data.user?.email, full_name:data.user?.user_metadata?.full_name||name};
     ls.set("sb-me",JSON.stringify(ME));
+    // If signing up, manually create profile (no trigger needed)
+    if(authMode==="signup"){
+      try {
+        await sb("profiles", {
+          method:"POST",
+          headers:{"Prefer":"resolution=merge-duplicates"},
+          body:JSON.stringify({id:ME.id, full_name:ME.full_name||"", email:ME.email||""})
+        });
+      } catch(e){ console.warn("Profile insert:", e.message); }
+    }
     await bootApp();
   } catch(e){
     btn.disabled=false; btn.textContent=authMode==="signin"?"Sign In":"Create Account";
