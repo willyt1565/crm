@@ -384,12 +384,12 @@ function setSyncDot(s){const d=document.getElementById("sync-dot");if(!d)return;
 async function pullAll(){
   setSyncDot("syncing");
   try{
-    const[ld,tk,pr,tp]=await Promise.all([
+    const[ld,tk,pr]=await Promise.all([
       sb("leads?select=id,data,assigned_to,created_by,updated_at&order=updated_at.desc"),
       sb("tasks?select=id,data,created_by,updated_at&order=updated_at.desc"),
-      sb("profiles?select=id,full_name,email"),
-      sb("sms_templates?select=id,name,body,created_by&order=created_at.asc")
+      sb("profiles?select=id,full_name,email")
     ]);
+    const tp=await sb("sms_templates?select=id,name,body,created_by&order=created_at.asc").catch(()=>[]);
     leads=ld.map(r=>({...r.data,id:r.id,assignedTo:r.assigned_to,createdBy:r.created_by}));
     tasks=tk.map(r=>({...r.data,id:r.id,createdBy:r.created_by}));
     profiles=pr; templates=tp||[];
@@ -402,14 +402,37 @@ async function pullAll(){
 }
 async function upsertLead(lead){
   setSyncDot("syncing");
-  await sb("leads",{method:"POST",headers:{"Prefer":"resolution=merge-duplicates"},body:JSON.stringify({id:lead.id,data:lead,assigned_to:lead.assignedTo||null,created_by:lead.createdBy||ME?.id,updated_at:lead.updatedAt})});
-  setSyncDot("ok");
+  try{
+    await sb("leads",{method:"POST",headers:{"Prefer":"resolution=merge-duplicates"},body:JSON.stringify({id:lead.id,data:lead,assigned_to:lead.assignedTo||null,created_by:lead.createdBy||ME?.id,updated_at:lead.updatedAt})});
+    setSyncDot("ok");
+  }catch(e){
+    // Try refreshing token once then retry
+    if(e.message.includes("401")||e.message.includes("JWT")||e.message.includes("expired")){
+      const ok=await tryRefreshToken();
+      if(ok){
+        await sb("leads",{method:"POST",headers:{"Prefer":"resolution=merge-duplicates"},body:JSON.stringify({id:lead.id,data:lead,assigned_to:lead.assignedTo||null,created_by:lead.createdBy||ME?.id,updated_at:lead.updatedAt})});
+        setSyncDot("ok"); return;
+      }
+    }
+    setSyncDot("error"); throw e;
+  }
 }
 async function deleteSbLead(id){try{await sb("leads?id=eq."+id,{method:"DELETE"});}catch(e){console.error(e);}}
 async function upsertTask(task){
   setSyncDot("syncing");
-  await sb("tasks",{method:"POST",headers:{"Prefer":"resolution=merge-duplicates"},body:JSON.stringify({id:task.id,data:task,created_by:task.createdBy||ME?.id,updated_at:task.updatedAt})});
-  setSyncDot("ok");
+  try{
+    await sb("tasks",{method:"POST",headers:{"Prefer":"resolution=merge-duplicates"},body:JSON.stringify({id:task.id,data:task,created_by:task.createdBy||ME?.id,updated_at:task.updatedAt})});
+    setSyncDot("ok");
+  }catch(e){
+    if(e.message.includes("401")||e.message.includes("JWT")||e.message.includes("expired")){
+      const ok=await tryRefreshToken();
+      if(ok){
+        await sb("tasks",{method:"POST",headers:{"Prefer":"resolution=merge-duplicates"},body:JSON.stringify({id:task.id,data:task,created_by:task.createdBy||ME?.id,updated_at:task.updatedAt})});
+        setSyncDot("ok"); return;
+      }
+    }
+    setSyncDot("error"); throw e;
+  }
 }
 async function deleteSbTask(id){try{await sb("tasks?id=eq."+id,{method:"DELETE"});}catch(e){console.error(e);}}
 async function upsertTemplate(tpl){
@@ -934,7 +957,7 @@ async function saveModal(){
     saveBtn.disabled=true;saveBtn.textContent="Saving…";
     toast("Saving to cloud…","saving",10000);
     try{await upsertLead(lead);closeModal();renderBoard();toast("✓ Lead saved","ok");}
-    catch(e){saveBtn.disabled=false;saveBtn.textContent="Save";setSyncDot("error");toast("❌ Save failed — check connection","err",5000);}
+    catch(e){saveBtn.disabled=false;saveBtn.textContent="Save";setSyncDot("error");toast("❌ "+e.message,"err",7000);}
   }else if(isTask){
     const f=getTaskForm();if(!f.title.trim()){alert("Please enter a task title.");return;}
     let task;
@@ -945,7 +968,7 @@ async function saveModal(){
     saveBtn2.disabled=true;saveBtn2.textContent="Saving…";
     toast("Saving to cloud…","saving",10000);
     try{await upsertTask(task);closeModal();renderTasks();toast("✓ Task saved","ok");}
-    catch(e){saveBtn2.disabled=false;saveBtn2.textContent="Save";setSyncDot("error");toast("❌ Save failed — check connection","err",5000);}
+    catch(e){saveBtn2.disabled=false;saveBtn2.textContent="Save";setSyncDot("error");toast("❌ "+e.message,"err",7000);}
   }else if(isTpl){
     const name=document.getElementById("f-tpl-name")?.value?.trim();
     const body=document.getElementById("f-tpl-body")?.value?.trim();
