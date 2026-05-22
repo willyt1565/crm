@@ -922,7 +922,7 @@ function openModal(){
 }
 function closeModal(){document.getElementById("modal").style.display="none";document.body.style.overflow="";}
 function maybeClose(e){if(e.target===document.getElementById("modal"))closeModal();}
-function saveModal(){
+async function saveModal(){
   const isLead=modalMode.includes("Lead"),isTask=modalMode.includes("Task"),isTpl=modalMode.includes("Template");
   if(isLead){
     const f=getLeadForm();if(!f.name.trim()){alert("Please enter a contact name.");return;}
