@@ -321,6 +321,11 @@ create policy "team templates" on sms_templates for all
 <script>
 // ── Constants ──────────────────────────────────────────────────────────────
 const STATUSES   = ["New Lead","Contacted","Qualified","Proposal Sent","Follow-Up","Signed","Lost"];
+// Display names for each stage — editable in Settings
+let COL_NAMES = {};
+function getColName(s){ return COL_NAMES[s]||s; }
+function loadColNames(){ try{ const saved=JSON.parse(ls.get("cfg-col-names")||"{}"); STATUSES.forEach(s=>{ COL_NAMES[s]=saved[s]||s; }); }catch{ STATUSES.forEach(s=>COL_NAMES[s]=s); } }
+function saveColNames(){ ls.set("cfg-col-names",JSON.stringify(COL_NAMES)); }
 const SOURCES    = ["HHHB Referral","First Responder Network","Military Network","Website","Social Media","Cold Outreach","Word of Mouth","Other"];
 const PTYPES     = ["Single Family","Multi-Family","Duplex","Triplex","Quadplex","5+ Units","Commercial"];
 const TASK_TYPES = ["Call","Email","Text","Send Proposal","Follow-Up","Site Visit","Other"];
@@ -469,6 +474,7 @@ function signOut(){if(!confirm("Sign out?"))return;AUTH_TOKEN="";ME=null;["sb-to
 
 // ── Boot ───────────────────────────────────────────────────────────────────
 async function bootApp(){
+  loadColNames();
   try{leads=JSON.parse(ls.get("npm-leads")||"[]");}catch{leads=[];}
   try{tasks=JSON.parse(ls.get("npm-tasks")||"[]");}catch{tasks=[];}
   try{profiles=JSON.parse(ls.get("npm-profiles")||"[]");}catch{profiles=[];}
@@ -530,7 +536,7 @@ function renderBoard(){
 
     const col=document.createElement("div");col.className="kanban-col";col.dataset.status=status;
     const hdr=document.createElement("div");hdr.className="col-header";hdr.style.cssText=`background:${c.hdr};border-left:3px solid ${c.color};`;
-    hdr.innerHTML=`<span class="col-title" style="color:${c.color}">${status}</span><span class="col-count" style="color:${c.color}">${colLeads.length}</span>`;
+    hdr.innerHTML=`<span class="col-title" style="color:${c.color}">${esc(getColName(status))}</span><span class="col-count" style="color:${c.color}">${colLeads.length}</span>`;
     col.appendChild(hdr);
 
     const body=document.createElement("div");body.className="col-body";body.style.background=c.bg+"cc";body.dataset.status=status;
@@ -614,7 +620,7 @@ function openDetail(id){
   const lead=leads.find(l=>l.id===id);if(!lead)return;
   const c=SC[lead.status]||{};
   document.getElementById("dp-name").textContent=lead.name||"Unnamed";
-  document.getElementById("dp-status-label").textContent=lead.status;
+  document.getElementById("dp-status-label").textContent=getColName(lead.status);
   document.getElementById("dp-status-label").style.color=c.color||"var(--gold)";
 
   const ghLink=CFG.get("gh-number")?`tel:${CFG.get("gh-number")}`:lead.phone?`tel:${lead.phone}`:"";
@@ -650,7 +656,7 @@ function openDetail(id){
     <div class="dp-section">
       <div class="dp-section-title">Pipeline Stage</div>
       <div class="dp-status-row">
-        ${STATUSES.map(s=>{const sc=SC[s];return`<button class="dp-status-btn" style="color:${sc.color};background:${lead.status===s?sc.hdr:"transparent"};border-color:${lead.status===s?sc.color:"var(--border2)"}" onclick="moveLeadToStatus('${id}','${s}');document.getElementById('dp-status-label').textContent='${s}';document.querySelector('.dp-status-btn[data-s=\`${s}\`]')">${s}</button>`;}).join("")}
+        ${STATUSES.map(s=>{const sc=SC[s];return`<button class="dp-status-btn" style="color:${sc.color};background:${lead.status===s?sc.hdr:"transparent"};border-color:${lead.status===s?sc.color:"var(--border2)"}" onclick="moveLeadToStatus('${id}','${s}');document.getElementById('dp-status-label').textContent=getColName('${s}')">${esc(getColName(s))}</button>`;}).join("")}
       </div>
     </div>
 
@@ -749,6 +755,24 @@ function renderSettings(){
   const sv=document.getElementById("settings-view");
   sv.innerHTML=`
     <div class="settings-card">
+      <div class="settings-title">🗂 Pipeline Stage Names</div>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.6">Rename any column to match your workflow. The internal data is preserved — only the display name changes.</p>
+      <div style="display:flex;flex-direction:column;gap:10px" id="col-name-fields">
+        ${STATUSES.map(s=>{const c=SC[s];return`
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="width:3px;height:36px;border-radius:2px;background:${c.color};flex-shrink:0"></div>
+          <div style="flex:1">
+            <label class="field-label" style="color:${c.color}">${s} <span style="color:var(--dim);font-weight:400;text-transform:none;letter-spacing:0">(internal key)</span></label>
+            <input class="field-input" id="col-${s.replace(/ /g,'-')}" value="${esc(getColName(s))}" placeholder="${esc(s)}"/>
+          </div>
+        </div>`;}).join("")}
+      </div>
+      <button class="btn btn-primary" style="margin-top:14px;align-self:flex-start" onclick="saveColNameSettings()">Save Column Names</button>
+      <button class="btn btn-ghost" style="margin-top:8px;margin-left:8px" onclick="resetColNames()">Reset to Defaults</button>
+      <div id="col-save-msg" style="display:none;font-size:12px;color:#34d399;margin-top:8px">✓ Saved! Board updated.</div>
+    </div>
+
+    <div class="settings-card">
       <div class="settings-title">📞 Grasshopper / Phone</div>
       <div style="display:flex;flex-direction:column;gap:10px">
         <div><label class="field-label">Your Grasshopper Number (for click-to-call)</label><input id="cfg-gh-number" class="field-input" value="${esc(CFG.get("gh-number"))}" placeholder="+12105551234" type="tel"/></div>
@@ -768,6 +792,22 @@ function renderSettings(){
   `;
 }
 
+function saveColNameSettings(){
+  STATUSES.forEach(s=>{
+    const inp=document.getElementById("col-"+s.replace(/ /g,"-"));
+    if(inp) COL_NAMES[s]=inp.value.trim()||s;
+  });
+  saveColNames();
+  renderBoard();
+  const msg=document.getElementById("col-save-msg");
+  if(msg){msg.style.display="block";setTimeout(()=>msg.style.display="none",2500);}
+}
+function resetColNames(){
+  STATUSES.forEach(s=>{ COL_NAMES[s]=s; const inp=document.getElementById("col-"+s.replace(/ /g,"-")); if(inp)inp.value=s; });
+  saveColNames(); renderBoard();
+  const msg=document.getElementById("col-save-msg");
+  if(msg){msg.textContent="✓ Reset to defaults.";msg.style.display="block";setTimeout(()=>{msg.style.display="none";msg.textContent="✓ Saved! Board updated.";},2000);}
+}
 function saveSettings(){
   CFG.set("gh-number",(document.getElementById("cfg-gh-number")?.value||"").trim());
   alert("Settings saved.");
@@ -905,7 +945,7 @@ function leadForm(e){
     <div><label class="field-label">Est. Monthly Rent</label><input id="f-rent" class="field-input" value="${esc(e.monthlyRent||"")}" placeholder="$1,500"/></div>
     <div><label class="field-label">Area / Territory</label>${mkSel("f-area",AREAS,e.area||"")}</div>
     <div><label class="field-label">Lead Source</label>${mkSel("f-source",SOURCES,e.source||"HHHB Referral")}</div>
-    <div><label class="field-label">Pipeline Stage</label>${mkSel("f-status",STATUSES,e.status||"New Lead")}</div>
+    <div class="full"><label class="field-label">Pipeline Stage</label><select id="f-status" class="field-input">${STATUSES.map(s=>`<option value="${s}"${s===(e.status||"New Lead")?" selected":""}>${esc(getColName(s))}</option>`).join("")}</select></div>
     <div><label class="field-label">Assigned To</label><select id="f-assign" class="field-input">${teamOpts}</select></div>
     <div><label class="field-label">Follow-Up Date</label><input id="f-followup" class="field-input" type="date" value="${esc(e.followUp||"")}"/></div>
     <div class="full"><label class="field-label">Notes</label><textarea id="f-notes" class="field-input">${esc(e.notes||"")}</textarea></div>
