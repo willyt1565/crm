@@ -168,6 +168,12 @@ textarea.field-input{resize:vertical;min-height:80px;}
 .pill{padding:5px 10px;border-radius:6px;font-size:11px;font-weight:700;border:1px solid var(--border);background:var(--surface);color:var(--dim);}
 .pill.active{background:var(--blue);color:#fff;border-color:var(--blue);}
 
+/* ── Toast ── */
+#toast{position:fixed;bottom:calc(20px + var(--safe-bot));left:50%;transform:translateX(-50%) translateY(20px);background:var(--surface2);border:1px solid var(--border2);border-radius:10px;padding:10px 18px;font-size:13px;font-weight:600;color:var(--text);z-index:9999;opacity:0;transition:all .25s;pointer-events:none;white-space:nowrap;box-shadow:0 8px 30px rgba(0,0,0,.5);}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+#toast.ok{border-color:#34d39966;color:#34d399;}
+#toast.err{border-color:#f8717166;color:#f87171;}
+#toast.saving{border-color:var(--gold)66;color:var(--gold);}
 /* ── Login / Setup ── */
 .login-box{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:26px 22px;width:100%;max-width:380px;}
 .login-logo{display:flex;align-items:center;gap:10px;margin-bottom:20px;}
@@ -396,14 +402,14 @@ async function pullAll(){
 }
 async function upsertLead(lead){
   setSyncDot("syncing");
-  try{await sb("leads",{method:"POST",headers:{"Prefer":"resolution=merge-duplicates"},body:JSON.stringify({id:lead.id,data:lead,assigned_to:lead.assignedTo||null,created_by:lead.createdBy||ME?.id,updated_at:lead.updatedAt})});setSyncDot("ok");}
-  catch(e){console.error(e);setSyncDot("error");}
+  await sb("leads",{method:"POST",headers:{"Prefer":"resolution=merge-duplicates"},body:JSON.stringify({id:lead.id,data:lead,assigned_to:lead.assignedTo||null,created_by:lead.createdBy||ME?.id,updated_at:lead.updatedAt})});
+  setSyncDot("ok");
 }
 async function deleteSbLead(id){try{await sb("leads?id=eq."+id,{method:"DELETE"});}catch(e){console.error(e);}}
 async function upsertTask(task){
   setSyncDot("syncing");
-  try{await sb("tasks",{method:"POST",headers:{"Prefer":"resolution=merge-duplicates"},body:JSON.stringify({id:task.id,data:task,created_by:task.createdBy||ME?.id,updated_at:task.updatedAt})});setSyncDot("ok");}
-  catch(e){console.error(e);setSyncDot("error");}
+  await sb("tasks",{method:"POST",headers:{"Prefer":"resolution=merge-duplicates"},body:JSON.stringify({id:task.id,data:task,created_by:task.createdBy||ME?.id,updated_at:task.updatedAt})});
+  setSyncDot("ok");
 }
 async function deleteSbTask(id){try{await sb("tasks?id=eq."+id,{method:"DELETE"});}catch(e){console.error(e);}}
 async function upsertTemplate(tpl){
@@ -521,6 +527,14 @@ const pName=id=>{const p=profiles.find(p=>p.id===id);return p?(p.full_name||p.em
 const pInit=id=>pName(id).split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase()||"?";
 const avColor=id=>AVC[Math.abs((id||"").charCodeAt(0)%AVC.length)];
 const uid=()=>crypto.randomUUID?crypto.randomUUID():Math.random().toString(36).slice(2)+Date.now().toString(36);
+
+let _toastTimer=null;
+function toast(msg,type="ok",duration=3000){
+  const el=document.getElementById("toast");if(!el)return;
+  el.textContent=msg;el.className="show "+type;
+  clearTimeout(_toastTimer);
+  _toastTimer=setTimeout(()=>el.className="",duration);
+}
 const esc=s=>String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
 
 // ── KANBAN BOARD ───────────────────────────────────────────────────────────
@@ -581,7 +595,10 @@ function makeTile(lead){
 function moveLeadToStatus(id,status){
   const lead=leads.find(l=>l.id===id);if(!lead||lead.status===status)return;
   lead.status=status;lead.updatedAt=Date.now();
-  ls.set("npm-leads",JSON.stringify(leads));upsertLead(lead);renderBoard();
+  ls.set("npm-leads",JSON.stringify(leads));
+  renderBoard();
+  toast("Moving lead…","saving",10000);
+  upsertLead(lead).then(()=>toast(`✓ Moved to ${getColName(status)}`,"ok")).catch(()=>toast("❌ Sync failed — check connection","err",5000));
 }
 
 // Touch drag
@@ -879,7 +896,7 @@ function copySnippet(){const t=getWebSnippet();navigator.clipboard.writeText(t).
 function copyEdge(){const t=getEdgeFunction();navigator.clipboard.writeText(t).then(()=>{const b=document.querySelector("#edge-block .copy-btn");if(b){b.textContent="Copied!";setTimeout(()=>b.textContent="Copy",2000);}});}
 
 // ── CRUD ───────────────────────────────────────────────────────────────────
-function claimLead(id){const lead=leads.find(l=>l.id===id);if(!lead)return;lead.assignedTo=ME?.id;lead.updatedAt=Date.now();ls.set("npm-leads",JSON.stringify(leads));upsertLead(lead);renderBoard();}
+function claimLead(id){const lead=leads.find(l=>l.id===id);if(!lead)return;lead.assignedTo=ME?.id;lead.updatedAt=Date.now();ls.set("npm-leads",JSON.stringify(leads));renderBoard();upsertLead(lead).then(()=>toast("✓ Lead claimed","ok")).catch(()=>toast("❌ Sync failed","err",4000));}
 function deleteLead(id){if(!confirm("Remove this lead?"))return;leads=leads.filter(l=>l.id!==id);ls.set("npm-leads",JSON.stringify(leads));deleteSbLead(id);renderBoard();}
 function toggleTask(id){tasks=tasks.map(t=>t.id===id?{...t,done:!t.done,updatedAt:Date.now()}:t);ls.set("npm-tasks",JSON.stringify(tasks));upsertTask(tasks.find(t=>t.id===id));if(currentView==="tasks")renderTasks();}
 function deleteTask(id){if(!confirm("Remove this task?"))return;tasks=tasks.filter(t=>t.id!==id);ls.set("npm-tasks",JSON.stringify(tasks));deleteSbTask(id);renderTasks();}
@@ -912,13 +929,23 @@ function saveModal(){
     let lead;
     if(modalMode==="editLead"){const old=leads.find(l=>l.id===modalId);lead={...f,id:modalId,assignedTo:old.assignedTo,createdBy:old.createdBy,createdAt:old.createdAt,updatedAt:Date.now()};leads=leads.map(l=>l.id===modalId?lead:l);}
     else{lead={...f,id:uid(),assignedTo:f.assignedTo||null,createdBy:ME?.id,createdAt:Date.now(),updatedAt:Date.now()};leads=[lead,...leads];}
-    ls.set("npm-leads",JSON.stringify(leads));upsertLead(lead);closeModal();renderBoard();
+    ls.set("npm-leads",JSON.stringify(leads));
+    const saveBtn=document.getElementById("modal").querySelector(".btn-primary");
+    saveBtn.disabled=true;saveBtn.textContent="Saving…";
+    toast("Saving to cloud…","saving",10000);
+    try{await upsertLead(lead);closeModal();renderBoard();toast("✓ Lead saved","ok");}
+    catch(e){saveBtn.disabled=false;saveBtn.textContent="Save";setSyncDot("error");toast("❌ Save failed — check connection","err",5000);}
   }else if(isTask){
     const f=getTaskForm();if(!f.title.trim()){alert("Please enter a task title.");return;}
     let task;
     if(modalMode==="editTask"){const old=tasks.find(t=>t.id===modalId);task={...f,id:modalId,done:old.done,createdBy:old.createdBy,createdAt:old.createdAt,updatedAt:Date.now()};tasks=tasks.map(t=>t.id===modalId?task:t);}
     else{task={...f,id:uid(),done:false,createdBy:ME?.id,createdAt:Date.now(),updatedAt:Date.now()};tasks=[task,...tasks];}
-    ls.set("npm-tasks",JSON.stringify(tasks));upsertTask(task);closeModal();renderTasks();
+    ls.set("npm-tasks",JSON.stringify(tasks));
+    const saveBtn2=document.getElementById("modal").querySelector(".btn-primary");
+    saveBtn2.disabled=true;saveBtn2.textContent="Saving…";
+    toast("Saving to cloud…","saving",10000);
+    try{await upsertTask(task);closeModal();renderTasks();toast("✓ Task saved","ok");}
+    catch(e){saveBtn2.disabled=false;saveBtn2.textContent="Save";setSyncDot("error");toast("❌ Save failed — check connection","err",5000);}
   }else if(isTpl){
     const name=document.getElementById("f-tpl-name")?.value?.trim();
     const body=document.getElementById("f-tpl-body")?.value?.trim();
@@ -970,5 +997,6 @@ function templateForm(e){
   </div>`;
 }
 </script>
+<div id="toast"></div>
 </body>
 </html>
