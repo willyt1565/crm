@@ -364,18 +364,32 @@ const CFG={get:k=>ls.get("cfg-"+k)||"",set:(k,v)=>ls.set("cfg-"+k,v)};
 // ── Supabase ───────────────────────────────────────────────────────────────
 async function sb(path,opts={}){
   const h={"apikey":SB_KEY,"Content-Type":"application/json","Prefer":"return=minimal",...(opts.headers||{})};
-  if(AUTH_TOKEN)h["Authorization"]="Bearer "+AUTH_TOKEN;
+  // Always send Authorization — user JWT when logged in, publishable key otherwise
+  h["Authorization"]="Bearer "+(AUTH_TOKEN||SB_KEY);
   const res=await fetch(SB_URL+"/rest/v1/"+path,{...opts,headers:h});
-  if(!res.ok){const e=await res.json().catch(()=>({message:"Error "+res.status}));throw new Error(e.message||e.hint||"Error");}
+  if(!res.ok){const e=await res.json().catch(()=>({message:"Error "+res.status}));throw new Error(e.message||e.hint||"Error "+res.status);}
   return res.status===204?null:res.json();
 }
 async function sbAuth(ep,body){
   let res;
-  try{res=await fetch(SB_URL+"/auth/v1/"+ep,{method:"POST",headers:{"apikey":SB_KEY,"Content-Type":"application/json"},body:JSON.stringify(body)});}
-  catch{throw new Error("Cannot reach Supabase.");}
+  try{
+    res=await fetch(SB_URL+"/auth/v1/"+ep,{
+      method:"POST",
+      headers:{
+        "apikey":SB_KEY,
+        "Authorization":"Bearer "+SB_KEY,
+        "Content-Type":"application/json"
+      },
+      body:JSON.stringify(body)
+    });
+  }catch(e){
+    throw new Error("Network error — cannot reach Supabase. Check your internet connection. ("+e.message+")");
+  }
   const text=await res.text();
-  let data;try{data=JSON.parse(text);}catch{throw new Error("Unexpected response.");}
-  if(!res.ok)throw new Error(data.error_description||data.message||data.msg||"Auth error");
+  let data;
+  try{data=JSON.parse(text);}
+  catch{throw new Error("Supabase returned unexpected response (status "+res.status+"): "+text.slice(0,120));}
+  if(!res.ok)throw new Error(data.error_description||data.message||data.msg||"Auth error ("+res.status+")");
   return data;
 }
 
