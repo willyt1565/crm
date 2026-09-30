@@ -1,0 +1,22 @@
+name: Keep Supabase Alive
+
+on:
+  schedule:
+    - cron: '0 8 * * *'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            -H "apikey: sb_publishable_Wihuq7Yk3scfPg4NIX1vcQ_-jGsTOqP" \
+            "https://cjwlstwugkqhycqteikz.supabase.co/rest/v1/leads?limit=1")
+          echo "Supabase ping status: $STATUS"
+          if [ "$STATUS" = "200" ] || [ "$STATUS" = "401" ] || [ "$STATUS" = "406" ]; then
+            echo "Supabase is alive"
+          else
+            echo "Unexpected status: $STATUS"
+          fi
