@@ -9,6 +9,7 @@
 <meta name="theme-color" content="#0a1428"/>
 <title>NPM Lead CRM</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 :root{
@@ -361,36 +362,82 @@ let dragId=null,dragOverCol=null;
 const ls={get:k=>{try{return localStorage.getItem(k);}catch{return null;}},set:(k,v)=>{try{localStorage.setItem(k,v);}catch{}},del:k=>{try{localStorage.removeItem(k);}catch{}}};
 const CFG={get:k=>ls.get("cfg-"+k)||"",set:(k,v)=>ls.set("cfg-"+k,v)};
 
-// ── Supabase ───────────────────────────────────────────────────────────────
-async function sb(path,opts={}){
-  const h={"apikey":SB_KEY,"Content-Type":"application/json","Prefer":"return=minimal",...(opts.headers||{})};
-  // Always send Authorization — user JWT when logged in, publishable key otherwise
-  h["Authorization"]="Bearer "+(AUTH_TOKEN||SB_KEY);
-  const res=await fetch(SB_URL+"/rest/v1/"+path,{...opts,headers:h});
-  if(!res.ok){const e=await res.json().catch(()=>({message:"Error "+res.status}));throw new Error(e.message||e.hint||"Error "+res.status);}
-  return res.status===204?null:res.json();
+// ── Supabase SDK ───────────────────────────────────────────────────────────
+let _supabase = null;
+function getClient(){
+  if(!_supabase) _supabase = supabase.createClient(SB_URL, SB_KEY);
+  return _supabase;
 }
-async function sbAuth(ep,body){
-  let res;
-  try{
-    res=await fetch(SB_URL+"/auth/v1/"+ep,{
-      method:"POST",
-      headers:{
-        "apikey":SB_KEY,
-        "Authorization":"Bearer "+SB_KEY,
-        "Content-Type":"application/json"
-      },
-      body:JSON.stringify(body)
-    });
-  }catch(e){
-    throw new Error("Network error — cannot reach Supabase. Check your internet connection. ("+e.message+")");
+
+// REST helper using SDK's fetch (handles auth + headers automatically)
+async function sb(path, opts={}){
+  const client = getClient();
+  // Build query from path
+  const [table, ...queryParts] = path.split("?");
+  const queryStr = queryParts.join("?");
+  const params = new URLSearchParams(queryStr);
+
+  if(opts.method==="DELETE"){
+    const idParam = queryStr.match(/id=eq\.([^&]+)/)?.[1];
+    if(!idParam) throw new Error("DELETE requires id=eq.xxx");
+    const {error} = await client.from(table).delete().eq("id", idParam);
+    if(error) throw new Error(error.message);
+    return null;
   }
-  const text=await res.text();
-  let data;
-  try{data=JSON.parse(text);}
-  catch{throw new Error("Supabase returned unexpected response (status "+res.status+"): "+text.slice(0,120));}
-  if(!res.ok)throw new Error(data.error_description||data.message||data.msg||"Auth error ("+res.status+")");
+  if(opts.method==="POST"){
+    const body = JSON.parse(opts.body||"{}");
+    const prefer = (opts.headers?.Prefer||"");
+    if(prefer.includes("merge-duplicates")){
+      const {error} = await client.from(table).upsert(body, {onConflict:"id"});
+      if(error) throw new Error(error.message);
+    } else {
+      const {error} = await client.from(table).insert(body);
+      if(error) throw new Error(error.message);
+    }
+    return null;
+  }
+  // SELECT — parse select and order from query string
+  const selectCols = params.get("select") || "*";
+  const orderParam = params.get("order");
+  const limitParam = params.get("limit");
+  let query = client.from(table).select(selectCols);
+  if(orderParam){
+    const [col, dir] = orderParam.split(".");
+    query = query.order(col, {ascending: dir!=="desc"});
+  }
+  if(limitParam) query = query.limit(parseInt(limitParam));
+  const {data, error} = await query;
+  if(error) throw new Error(error.message);
   return data;
+}
+
+// Auth helpers using SDK
+async function sbSignIn(email, password){
+  const {data, error} = await getClient().auth.signInWithPassword({email, password});
+  if(error) throw new Error(error.message);
+  return data;
+}
+async function sbSignUp(email, password, fullName){
+  const {data, error} = await getClient().auth.signUp({email, password, options:{data:{full_name:fullName}}});
+  if(error) throw new Error(error.message);
+  return data;
+}
+async function sbRecover(email){
+  const {error} = await getClient().auth.resetPasswordForEmail(email);
+  if(error) throw new Error(error.message);
+}
+async function sbGetSession(){
+  const {data, error} = await getClient().auth.getSession();
+  if(error) return null;
+  return data?.session;
+}
+async function sbRefreshSession(){
+  const {data, error} = await getClient().auth.refreshSession();
+  if(error) return null;
+  return data?.session;
+}
+async function sbSignOut(){
+  await getClient().auth.signOut();
 }
 
 // ── Sync ───────────────────────────────────────────────────────────────────
@@ -416,37 +463,14 @@ async function pullAll(){
 }
 async function upsertLead(lead){
   setSyncDot("syncing");
-  try{
-    await sb("leads",{method:"POST",headers:{"Prefer":"resolution=merge-duplicates"},body:JSON.stringify({id:lead.id,data:lead,assigned_to:lead.assignedTo||null,created_by:lead.createdBy||ME?.id,updated_at:lead.updatedAt})});
-    setSyncDot("ok");
-  }catch(e){
-    // Try refreshing token once then retry
-    if(e.message.includes("401")||e.message.includes("JWT")||e.message.includes("expired")){
-      const ok=await tryRefreshToken();
-      if(ok){
-        await sb("leads",{method:"POST",headers:{"Prefer":"resolution=merge-duplicates"},body:JSON.stringify({id:lead.id,data:lead,assigned_to:lead.assignedTo||null,created_by:lead.createdBy||ME?.id,updated_at:lead.updatedAt})});
-        setSyncDot("ok"); return;
-      }
-    }
-    setSyncDot("error"); throw e;
-  }
+  await sb("leads",{method:"POST",headers:{"Prefer":"resolution=merge-duplicates"},body:JSON.stringify({id:lead.id,data:lead,assigned_to:lead.assignedTo||null,created_by:lead.createdBy||ME?.id,updated_at:lead.updatedAt})});
+  setSyncDot("ok");
 }
 async function deleteSbLead(id){try{await sb("leads?id=eq."+id,{method:"DELETE"});}catch(e){console.error(e);}}
 async function upsertTask(task){
   setSyncDot("syncing");
-  try{
-    await sb("tasks",{method:"POST",headers:{"Prefer":"resolution=merge-duplicates"},body:JSON.stringify({id:task.id,data:task,created_by:task.createdBy||ME?.id,updated_at:task.updatedAt})});
-    setSyncDot("ok");
-  }catch(e){
-    if(e.message.includes("401")||e.message.includes("JWT")||e.message.includes("expired")){
-      const ok=await tryRefreshToken();
-      if(ok){
-        await sb("tasks",{method:"POST",headers:{"Prefer":"resolution=merge-duplicates"},body:JSON.stringify({id:task.id,data:task,created_by:task.createdBy||ME?.id,updated_at:task.updatedAt})});
-        setSyncDot("ok"); return;
-      }
-    }
-    setSyncDot("error"); throw e;
-  }
+  await sb("tasks",{method:"POST",headers:{"Prefer":"resolution=merge-duplicates"},body:JSON.stringify({id:task.id,data:task,created_by:task.createdBy||ME?.id,updated_at:task.updatedAt})});
+  setSyncDot("ok");
 }
 async function deleteSbTask(id){try{await sb("tasks?id=eq."+id,{method:"DELETE"});}catch(e){console.error(e);}}
 async function upsertTemplate(tpl){
@@ -487,12 +511,20 @@ async function doAuth(){
   if(authMode==="signup"&&!name){errEl.textContent="Please enter your full name.";errEl.style.display="block";return;}
   const btn=document.getElementById("auth-btn");btn.disabled=true;btn.textContent="Please wait…";
   try{
-    const data=authMode==="signup"?await sbAuth("signup",{email,password:pass,options:{data:{full_name:name}}}):await sbAuth("token?grant_type=password",{email,password:pass});
+    let session, user;
+    if(authMode==="signup"){
+      const data=await sbSignUp(email,pass,name);
+      if(!data.session){okEl.textContent="✓ Account created! You can now sign in.";okEl.style.display="block";setAuthMode("signin");btn.disabled=false;btn.textContent="Create Account";return;}
+      session=data.session; user=data.user;
+    } else {
+      const data=await sbSignIn(email,pass);
+      session=data.session; user=data.user;
+    }
     btn.disabled=false;btn.textContent=authMode==="signin"?"Sign In":"Create Account";
-    if(!data.access_token){okEl.textContent="✓ Account created! You can now sign in.";okEl.style.display="block";setAuthMode("signin");return;}
-    AUTH_TOKEN=data.access_token;REFRESH_TOKEN=data.refresh_token||"";
-    ls.set("sb-token",AUTH_TOKEN);ls.set("sb-refresh",REFRESH_TOKEN);ls.set("sb-token-exp",Date.now()+(data.expires_in||3600)*1000);
-    ME={id:data.user?.id,email:data.user?.email,full_name:data.user?.user_metadata?.full_name||name};
+    AUTH_TOKEN=session.access_token; REFRESH_TOKEN=session.refresh_token||"";
+    ls.set("sb-token",AUTH_TOKEN);ls.set("sb-refresh",REFRESH_TOKEN);
+    ls.set("sb-token-exp",Date.now()+(session.expires_in||3600)*1000);
+    ME={id:user.id,email:user.email,full_name:user.user_metadata?.full_name||name};
     ls.set("sb-me",JSON.stringify(ME));
     if(authMode==="signup"){try{await sb("profiles",{method:"POST",headers:{"Prefer":"resolution=merge-duplicates"},body:JSON.stringify({id:ME.id,full_name:ME.full_name||"",email:ME.email||""})});}catch(e){console.warn("Profile:",e.message);}}
     await bootApp();
@@ -503,17 +535,21 @@ async function forgotPassword(){
   const errEl=document.getElementById("login-error"),okEl=document.getElementById("login-ok");
   errEl.style.display="none";okEl.style.display="none";
   if(!email){errEl.textContent="Enter your email first.";errEl.style.display="block";return;}
-  try{await sbAuth("recover",{email});okEl.textContent="✓ Password reset email sent.";okEl.style.display="block";}
+  try{await sbRecover(email);okEl.textContent="✓ Password reset email sent.";okEl.style.display="block";}
   catch(e){errEl.textContent="❌ "+e.message;errEl.style.display="block";}
 }
 async function tryRefreshToken(){
-  const token=ls.get("sb-token"),exp=parseInt(ls.get("sb-token-exp")||"0");
-  if(!token)return false;
-  if(Date.now()<exp-60000){AUTH_TOKEN=token;return true;}
-  const refresh=ls.get("sb-refresh");if(!refresh)return false;
-  try{const data=await sbAuth("token?grant_type=refresh_token",{refresh_token:refresh});AUTH_TOKEN=data.access_token;REFRESH_TOKEN=data.refresh_token||refresh;ls.set("sb-token",AUTH_TOKEN);ls.set("sb-refresh",REFRESH_TOKEN);ls.set("sb-token-exp",Date.now()+(data.expires_in||3600)*1000);return true;}catch{return false;}
+  try{
+    // Try to get existing session from SDK first
+    const session=await sbGetSession();
+    if(session){AUTH_TOKEN=session.access_token;return true;}
+    // Try refresh
+    const refreshed=await sbRefreshSession();
+    if(refreshed){AUTH_TOKEN=refreshed.access_token;return true;}
+    return false;
+  }catch{return false;}
 }
-function signOut(){if(!confirm("Sign out?"))return;AUTH_TOKEN="";ME=null;["sb-token","sb-refresh","sb-token-exp","sb-me","npm-leads","npm-tasks","npm-profiles","npm-templates"].forEach(k=>ls.del(k));leads=[];tasks=[];profiles=[];templates=[];document.getElementById("app").style.display="none";showLogin();}
+function signOut(){if(!confirm("Sign out?"))return;AUTH_TOKEN="";ME=null;sbSignOut().catch(()=>{});["sb-token","sb-refresh","sb-token-exp","sb-me","npm-leads","npm-tasks","npm-profiles","npm-templates"].forEach(k=>ls.del(k));leads=[];tasks=[];profiles=[];templates=[];document.getElementById("app").style.display="none";showLogin();}
 
 // ── Boot ───────────────────────────────────────────────────────────────────
 async function bootApp(){
